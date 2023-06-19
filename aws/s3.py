@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 import logging
 import requests
@@ -52,6 +53,30 @@ def upload_file_with_presigned_post(url, fields, file_path):
             print("File upload failed:", e)
 
 
+def generate_presigned_url(
+    bucket_name: str, object_key: str, expiration: Optional[int] = 3600
+) -> Optional[str]:
+    """
+    제한된 시간(expiration) 동안 특정 S3 object에 접근할 수 있는 presigned URL을 생성하는 함수
+
+    :param bucket_name: 접근할 S3 object가 저장되어 있는 버킷의 이름
+    :param object_key: 접근할 S3 object의 key
+    :param expiration: URL 만료 시간
+    :return: 생성된 presigned URL, 또는 실패했을 경우 None
+    """
+    s3_client = boto3.client("s3")
+    try:
+        response = s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket_name, "Key": object_key},
+            ExpiresIn=expiration,
+        )
+        return response
+    except ClientError as e:
+        print("Error generating presigned URL: {}".format(e))
+        return None
+
+
 if __name__ == "__main__":
     bucket_name = "tokpeanut"
     prefix = str(uuid.uuid4())
@@ -77,8 +102,12 @@ if __name__ == "__main__":
 
     url = result["url"]
     fields = result["fields"]
+    key = fields["key"]
 
     print("URL:", url)
     print("fields:", fields)
-    print("Object key:", fields["key"])
+    print("Object key:", key)
     upload_file_with_presigned_post(url, fields, "./resource/test/audio/1_100.mp3")
+
+    access_url = generate_presigned_url("tokpeanut", key, 30)
+    print("Presigned url for access file:", access_url)
