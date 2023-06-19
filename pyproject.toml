@@ -8,6 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.8.17"
 flask = "^2.3.2"
+boto3 = "^1.26.154"
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+boto = "^2.49.0"
 
 
 [build-system]
