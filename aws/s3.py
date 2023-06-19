@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional, List
 import uuid
 import logging
 import requests
@@ -8,19 +8,25 @@ from botocore.exceptions import ClientError
 
 
 def create_presigned_post(
-    bucket_name, object_name, fields, conditions, expiration=3600
-):
-    """Generate a presigned URL S3 POST request to upload a file
+    bucket_name: str,
+    object_name: str,
+    fields: dict,
+    conditions: List[dict],
+    expiration: Optional[int] = 3600,
+) -> Optional[dict]:
+    """
+    S3에 파일을 업로드하기 위한 Presigned POST URL을 생성하는 함수
+    참고: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/generate_presigned_post.html
 
-    :param bucket_name: string
-    :param object_name: string
-    :param fields: Dictionary of prefilled form fields
-    :param conditions: List of conditions to include in the policy
-    :param expiration: Time in seconds for the presigned URL to remain valid
-    :return: Dictionary with the following keys:
-        url: URL to post to
-        fields: Dictionary of form fields and values to submit with the POST
-    :return: None if error.
+    :param bucket_name: 파일을 업로드할 버킷의 이름
+    :param object_name: 업로드할 object의 이름
+    :param fields: 파일 업로드에 필요한 추가 정보
+    :param conditions: Policy에 포함할 condition 목록
+    :param expiration: URL 만료 시간 (초)
+    :return: 다음 key를 가지는 딕셔너리:
+        url: 파일 업로드에 사용할 URL
+        fields: POST method로 파일을 업로드할 때 HTTP Body로 전달해야 할 값들을 포함하는 딕셔너리
+    :return: 에러가 발생할 경우 None
     """
 
     # Generate a presigned S3 POST URL
@@ -37,11 +43,17 @@ def create_presigned_post(
         logging.error(e)
         return None
 
-    # The response contains the presigned URL and required fields
     return response
 
 
-def upload_file_with_presigned_post(url, fields, file_path):
+def upload_file_with_presigned_post(url: str, fields: dict, file_path: str):
+    """
+    `create_presigned_post`로 발급받은 presigned POST URL에 파일을 업로드하는 함수
+
+    :param url: 발급받은 presigned POST URL
+    :param fields: 발급받은 presigned POST fields
+    :file_path: 업로드할 파일의 경로
+    """
     with open(file_path, "rb") as file:
         files = {"file": file}
 
@@ -58,11 +70,13 @@ def generate_presigned_url(
 ) -> Optional[str]:
     """
     제한된 시간(expiration) 동안 특정 S3 object에 접근할 수 있는 presigned URL을 생성하는 함수
+    참고: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/generate_presigned_url.html
 
     :param bucket_name: 접근할 S3 object가 저장되어 있는 버킷의 이름
     :param object_key: 접근할 S3 object의 key
-    :param expiration: URL 만료 시간
-    :return: 생성된 presigned URL, 또는 실패했을 경우 None
+    :param expiration: URL 만료 시간 (초)
+    :return: 생성된 presigned URL
+    :return: 에러 발생시 None
     """
     s3_client = boto3.client("s3")
     try:
@@ -83,7 +97,6 @@ if __name__ == "__main__":
     object_name = prefix + "_" + input("Object name : ")
 
     fields = {
-        "key": object_name,
         "Content-Type": "audio/mpeg",
         "acl": "private",
     }
