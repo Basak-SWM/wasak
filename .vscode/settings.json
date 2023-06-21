@@ -3,5 +3,5 @@
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "python.formatting.provider": "none",
-  "conventionalCommits.scopes": ["s3"]
+  "conventionalCommits.scopes": ["s3", "stt"]
 }
