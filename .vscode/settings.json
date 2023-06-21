@@ -3,7 +3,7 @@
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "python.formatting.provider": "none",
-  "conventionalCommits.scopes": ["s3", "stt", "audio"],
+  "conventionalCommits.scopes": ["s3", "stt", "audio", "api-info"],
   "python.testing.unittestArgs": ["-v", "-s", "./test", "-p", "test_*.py"],
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true
