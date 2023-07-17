@@ -1,8 +1,13 @@
 name: Deploy to EC2 as Docker
 
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  ECR_REPOSITORY: wasak
+
 on:
   push:
-    branches: [main]
+    branches: [staging]
 
 jobs:
   build:
@@ -14,32 +19,53 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/build-push-action@v4.1.1
 
-      - name: Login to Dockerhub
-        uses: docker/login-action@v2.2.0
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Proxy Build And Push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/wasak
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Create .env
+        run: |
+          touch ./.env
+          echo "${{ secrets.APPLICATION_SETTING }}" > ./.env
+        shell: bash
+
+      - name: Build, tag, and push server-deploy image to Amazon ECR
+        if: contains(github.ref, 'staging')
+        id: build-image-staging
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          DATE=$(date "+%y.%m.%d")
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$DATE ./
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$DATE
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   deploy:
     needs: build
     name: Deploy
-    runs-on: [self-hosted, label-wasak]
+    runs-on: ubuntu-latest
     steps:
-      - name: Login to ghcr
-        uses: docker/login-action@v2.2.0
+      - name: Deploy on staging server
+        if: contains(github.ref, 'staging')
+        uses: appleboy/ssh-action@v0.1.10
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-      - name: Docker run
-        run: |
-          docker stop wasak && docker rm wasak && docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/wasak:latest
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/wasak:latest
-          docker run -d -p 8000:8000 --name wasak ${{ secrets.DOCKERHUB_USERNAME }}/wasak:latest
+          host: ${{ secrets.AWS_HOST_DEPLOY }}
+          username: ${{ secrets.AWS_SSH_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script_stop: true
+          script: |
+            password=$(aws ecr get-login-password --region ${{ env.AWS_REGION }})
+            docker login --username AWS --password $password ${{ env.ECR_REGISTRY }}
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+            docker container stop ${{env.ECR_REPOSITORY}}-staging 2>/dev/null || true
+            docker container rm ${{env.ECR_REPOSITORY}}-staging 2>/dev/null || true
+            docker run -d -p 8000:8000 --name ${{env.ECR_REPOSITORY}}-staging ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest

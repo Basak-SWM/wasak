@@ -1,4 +1,5 @@
 .env
+.env.prod
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm,visualstudiocode,flask
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm,visualstudiocode,flask
