@@ -37,10 +37,12 @@ jobs:
         id: build-image-staging
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         run: |
-          docker build -t $ECR_REPOSITORY .
-          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          DATE=$(date "+%y.%m.%d")
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$DATE ./
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$DATE
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   deploy:
