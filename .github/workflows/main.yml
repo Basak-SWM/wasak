@@ -40,11 +40,11 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           DATE=$(date "+%y.%m.%d")
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$DATE ./
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./
+          docker build -t public.ecr.aws/w5l3p7g4/wasasak:$DATE ./
+          docker build -t public.ecr.aws/w5l3p7g4/wasasak:latest ./
 
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$DATE
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push public.ecr.aws/w5l3p7g4/wasasak:$DATE
+          docker push public.ecr.aws/w5l3p7g4/wasasak:latest
 
   deploy:
     needs: build
