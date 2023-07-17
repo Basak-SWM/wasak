@@ -44,6 +44,7 @@ jobs:
         run: |
           docker build -t $ECR_REPOSITORY .
           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo docker image list
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   deploy:
