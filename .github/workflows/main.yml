@@ -33,18 +33,30 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push server-deploy image to Amazon ECR
-        if: contains(github.ref, 'staging')
-        id: build-image-staging
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          DATE=$(date "+%y.%m.%d")
-          docker build -t 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com/wasak:$DATE ./
-          docker build -t 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com/wasak:latest ./
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-          docker push 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com/wasak:$DATE
-          docker push 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com/wasak:latest
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # - name: Build, tag, and push server-deploy image to Amazon ECR
+      #   if: contains(github.ref, 'staging')
+      #   id: build-image-staging
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #   run: |
+      #     DATE=$(date "+%y.%m.%d")
+      #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$DATE ./
+      #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./
+
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$DATE
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   deploy:
     needs: build
@@ -61,8 +73,8 @@ jobs:
           script_stop: true
           script: |
             password=$(aws ecr get-login-password --region ${{ env.AWS_REGION }})
-            docker login --username AWS --password $password 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com
-            docker pull 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com/wasak:latest
-            docker container stop wasak-staging 2>/dev/null || true
-            docker container rm wasak-staging 2>/dev/null || true
-            docker run -d -p 8000:8000 --name wasak-staging 906389837735.dkr.ecr.ap-northeast-2.amazonaws.com/wasak:latest
+            docker login --username AWS --password $password ${{ secrets.ECR_REGISTRY }}
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+            docker container stop ${{env.ECR_REPOSITORY}}-staging 2>/dev/null || true
+            docker container rm ${{env.ECR_REPOSITORY}}-staging 2>/dev/null || true
+            docker run -d -p 8000:8000 --name ${{env.ECR_REPOSITORY}}-staging ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
