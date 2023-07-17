@@ -4,4 +4,4 @@ app = FastAPI()
 
 from api import info
 
-app.mount("/api/info", info.app)
+app.mount("/api/v1/info", info.app)
