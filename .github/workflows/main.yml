@@ -1,13 +1,13 @@
 name: Deploy to EC2 as Docker
 
+on:
+  push:
+    branches: [staging]
+
 env:
   AWS_REGION: ap-northeast-2
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: wasak
-
-on:
-  push:
-    branches: [staging]
 
 jobs:
   build:
