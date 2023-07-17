@@ -2,6 +2,7 @@ name: Deploy to EC2 as Docker
 
 env:
   AWS_REGION: ap-northeast-2
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: wasak
 
 on:
