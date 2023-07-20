@@ -42,6 +42,16 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./
 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+      - name: Notify build status to slack
+        uses: 8398a7/action-slack@v3
+        with:
+           status: ${{ job.status }}
+           fields: workflow,job,commit,repo,author,took,ref
+           author_name: Heeg
+        env:
+           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
 
   deploy:
     needs: build
@@ -64,3 +74,13 @@ jobs:
             docker container rm ${{env.ECR_REPOSITORY}}-staging 2>/dev/null || true
             docker run -d -p 8000:8000 --name ${{env.ECR_REPOSITORY}}-staging ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
             docker images | awk '$1 == "${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}" && $2 == "<none>" {print $3}' | xargs -I {} docker rmi {}
+      
+      - name: Notify deploy status to slack
+        uses: 8398a7/action-slack@v3
+        with:
+           status: ${{ job.status }}
+           fields: workflow,job,commit,repo,author,took,ref
+           author_name: Heeg
+        env:
+           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
