@@ -2,6 +2,9 @@ import datetime
 import os
 from pathlib import Path
 import uuid
+"""
+프로젝트에서 사용하는 cache 관련 로직 담당 서비스
+"""
 
 # 항상 동일한 cache 폴더 경로를 갖기 위해 __file__ 기준으로 경로를 설정한다.
 PROJECT_ROOT_PATH = Path(os.path.realpath(__file__)).parent.parent

@@ -3,7 +3,7 @@ import boto3
 from cache_service import get_cache_file_path
 
 
-def download_webm_segments_from_speech_info(s3_webm_segments_path_list: List[str]):
+def download_webm_segments_from_s3(s3_webm_segments_path_list: List[str]):
     s3 = boto3.client("s3")
     downloaded_webm_files_path = []
 
