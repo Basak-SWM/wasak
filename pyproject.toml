@@ -20,6 +20,9 @@ wavfile = "^4.7.0"
 sqlalchemy = "^2.0.19"
 fastapi = "^0.100.0"
 pydantic-settings = "^2.0.2"
+mysqlclient = "^2.2.0"
+pymysql = "^1.1.0"
+cryptography = "^41.0.2"
 
 
 [build-system]
