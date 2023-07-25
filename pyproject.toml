@@ -16,6 +16,8 @@ fastapi = "^0.97.0"
 uvicorn = "^0.22.0"
 librosa = "^0.10.0.post2"
 soundfile = "^0.12.1"
+noisereduce = "^2.0.1"
+wavfile = "^4.7.0"
 
 
 [build-system]
