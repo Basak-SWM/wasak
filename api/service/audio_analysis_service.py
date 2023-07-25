@@ -134,3 +134,8 @@ def get_db_analysis(audio_file_path: Path):
     # plt.ylabel('Loudness (dB, relative)')
     # plt.title('Loudness over Time')
     # plt.show()
+
+
+def get_hz_analysis(audio_file_path: Path):
+    # TODO:
+    return None
