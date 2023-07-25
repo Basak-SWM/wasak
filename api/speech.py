@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import concurrent.futures
-from service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
-from service.clova_service import clova_stt_send
-from service.audio_analysis_service import (
+from api.service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
+from api.service.clova_service import clova_stt_send
+from api.service.audio_analysis_service import (
     get_db_analysis,
     get_f0_analysis,
 )

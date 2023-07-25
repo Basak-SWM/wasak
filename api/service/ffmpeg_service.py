@@ -1,7 +1,7 @@
 import ffmpeg
 from pathlib import Path
 from typing import List
-from cache_service import get_cache_file_path
+from api.service.cache_service import get_cache_file_path
 
 """
 *주의* ffmpeg가 OS의 PATH에 등록되어 있어야 함.
@@ -72,6 +72,3 @@ def wav_to_mp3(wav_file_path: Path) -> Path:
     )
 
     return output_mp3_path
-
-
-merge_webm_files_to_wav(["/Users/cyh/cyh/programming/wasak/cache/2.webm"])
