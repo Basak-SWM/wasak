@@ -18,6 +18,7 @@ librosa = "^0.10.0.post2"
 soundfile = "^0.12.1"
 noisereduce = "^2.0.1"
 wavfile = "^4.7.0"
+sqlalchemy = "^2.0.19"
 
 
 [build-system]
