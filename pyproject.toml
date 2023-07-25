@@ -12,13 +12,14 @@ boto3 = "^1.26.154"
 python-dotenv = "^1.0.0"
 requests = "^2.31.0"
 boto = "^2.49.0"
-fastapi = "^0.97.0"
 uvicorn = "^0.22.0"
 librosa = "^0.10.0.post2"
 soundfile = "^0.12.1"
 noisereduce = "^2.0.1"
 wavfile = "^4.7.0"
 sqlalchemy = "^2.0.19"
+fastapi = "^0.100.0"
+pydantic-settings = "^2.0.2"
 
 
 [build-system]
