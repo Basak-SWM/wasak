@@ -23,6 +23,7 @@ pydantic-settings = "^2.0.2"
 mysqlclient = "^2.2.0"
 pymysql = "^1.1.0"
 cryptography = "^41.0.2"
+ffmpeg = "^1.4"
 
 
 [build-system]
