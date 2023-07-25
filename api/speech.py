@@ -5,7 +5,6 @@ from service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
 from service.clova_service import clova_stt_send
 from service.audio_analysis_service import (
     get_db_analysis,
-    get_hz_analysis,
     get_f0_analysis,
 )
 
@@ -36,13 +35,11 @@ def trigger_analysis_1(dto: Analysis1):
     4-1. Clova에 STT Request를 보낸다. (용량 최적화를 위해 추후 mp3로 보내야 할 수도 있음.)
     4-2. wav파일로 dB Analysis
         4-2-1. 결과 DB 저장
-    4-3. wav파일로 Hz Analysis
+    4-3. wav파일로 f0 Analysis
         4-3-1. 결과 DB 저장
-    4-4. wav파일로 f0 Analysis
-        4-4-1. 결과 DB 저장
-    4-5. wav -> mp3 변환
-        4-5-1. 변환된 mp3파일 S3 업로드
-        4-5-2. 변환된 mp3파일 삭제
+    4-4. wav -> mp3 변환
+        4-4-1. 변환된 mp3파일 S3 업로드
+        4-4-2. 변환된 mp3파일 삭제
     5. 모든 작업 후 wav 파일 삭제
     """
     # 1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
@@ -57,10 +54,6 @@ def trigger_analysis_1(dto: Analysis1):
     # 직렬 작업 필요한 것들 하나의 함수로 wrapping
     def db_analysis_and_save_db():
         get_db_analysis(merged_wav_file_path, dto.callback_url)
-        # TODO: 결과 DB 저장
-
-    def hz_analysis_and_save_db():
-        get_hz_analysis(merged_wav_file_path)
         # TODO: 결과 DB 저장
 
     def f0_analysis_and_save_db():
@@ -78,11 +71,9 @@ def trigger_analysis_1(dto: Analysis1):
             executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
             # 4-2. wav파일로 dB Analysis 후 DB 저장
             executor.submit(db_analysis_and_save_db),
-            # 4-3. wav파일로 hz Analysis 후 DB 저장
-            executor.submit(hz_analysis_and_save_db),
-            # 4-4. wav파일로 f0 Analysis 후 DB 저장
+            # 4-3. wav파일로 f0 Analysis 후 DB 저장
             executor.submit(f0_analysis_and_save_db),
-            # 4-5. wav -> mp3 변환, S3에 업로드 후 삭제
+            # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
             executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
         }
 
