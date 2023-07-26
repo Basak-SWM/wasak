@@ -1,6 +1,17 @@
+import os
+from typing import List
+import tempfile
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 import concurrent.futures
+
+
+from api.data.client import SpeechDatabaseClient, AudioSegmentDatabaseClient
+from api.data.shortcuts import get_object_or_404
+from api.data.tables import Speech, AudioSegment
+
+from api.service.aws.s3 import S3Service
 from api.service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
 from api.service.clova_service import clova_stt_send
 from api.service.audio_analysis_service import (
@@ -9,6 +20,12 @@ from api.service.audio_analysis_service import (
 )
 
 app = FastAPI()
+
+
+speech_db_client = SpeechDatabaseClient()
+audio_segment_db_client = AudioSegmentDatabaseClient()
+
+s3_service = S3Service()
 
 
 class Analysis1(BaseModel):
@@ -26,7 +43,7 @@ class Analysis1(BaseModel):
 
 
 @app.post("/{speech_id}/analysis-1")
-def trigger_analysis_1(dto: Analysis1):
+def trigger_analysis_1(speech_id: int, dto: Analysis1):
     """
     ## STT 결과가 필요 없는 음성 분석 수행
     1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
@@ -43,13 +60,29 @@ def trigger_analysis_1(dto: Analysis1):
     5. 모든 작업 후 wav 파일 삭제
     """
     # 1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
-    # TODO:
+    target_speech: Speech = get_object_or_404(
+        speech_db_client, [Speech.id.bool_op("=")(speech_id)]
+    )
+
+    audio_segments: List[
+        AudioSegment
+    ] = audio_segment_db_client.select_audio_segments_of(target_speech)
+
     # 2. S3에서 해당 경로들의 파일들을 다운로드한다.
-    # TODO:
-    DUMMY_AUDIO_SEGMENTS_FILE_PATH = [""]
+    audio_segment_file_paths = []
+    with tempfile.TemporaryDirectory() as tmp_dir_path:
+        for audio_segment in audio_segments:
+            key = audio_segment.get_key()
+            file_path = os.path.join(tmp_dir_path, key)
+            audio_segment_file_paths.append(file_path)
+
+            s3_service.download_object(audio_segment.get_full_path(), file_path)
+
+        # key의 맨 앞자리에 timestamp가 들어 있으므로 정렬함
+        audio_segment_file_paths.sort()
 
     # 3. 해당 파일들을 wav로 합친다.
-    merged_wav_file_path = merge_webm_files_to_wav(DUMMY_AUDIO_SEGMENTS_FILE_PATH)
+    merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
 
     # 직렬 작업 필요한 것들 하나의 함수로 wrapping
     def db_analysis_and_save_db():
@@ -65,6 +98,7 @@ def trigger_analysis_1(dto: Analysis1):
         # TODO: upload s3
         mp3_path.unlink()
 
+    mp3_path = wav_to_mp3(merged_wav_file_path)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {
             # 4-1. Clova에 STT Request를 보낸다.
