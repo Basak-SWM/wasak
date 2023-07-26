@@ -2,30 +2,5 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
-  "python.formatting.provider": "none",
-  "conventionalCommits.scopes": ["s3", "stt", "audio", "api-info"],
-  "python.testing.unittestArgs": ["-v", "-s", "./test", "-p", "test_*.py"],
-  "python.testing.pytestEnabled": false,
-  "python.testing.unittestEnabled": true,
-  "cSpell.words": ["sessionmaker"],
-  "workbench.colorCustomizations": {
-    "activityBar.activeBackground": "#d4ebc8",
-    "activityBar.background": "#d4ebc8",
-    "activityBar.foreground": "#15202b",
-    "activityBar.inactiveForeground": "#15202b99",
-    "activityBarBadge.background": "#7391cc",
-    "activityBarBadge.foreground": "#15202b",
-    "commandCenter.border": "#15202b99",
-    "sash.hoverBorder": "#d4ebc8",
-    "statusBar.background": "#b7dea2",
-    "statusBar.foreground": "#15202b",
-    "statusBarItem.hoverBackground": "#9ad17c",
-    "statusBarItem.remoteBackground": "#b7dea2",
-    "statusBarItem.remoteForeground": "#15202b",
-    "titleBar.activeBackground": "#b7dea2",
-    "titleBar.activeForeground": "#15202b",
-    "titleBar.inactiveBackground": "#b7dea299",
-    "titleBar.inactiveForeground": "#15202b99"
-  },
-  "peacock.color": "#b7dea2"
+  "python.formatting.provider": "none"
 }
