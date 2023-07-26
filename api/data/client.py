@@ -60,6 +60,16 @@ class DatabaseClient:
             session.close()
             return result
 
+    def insert(self, vo: T) -> T:
+        vo.id = None
+
+        session = self.get_session()
+        session.add(vo)
+        session.commit()
+        session.close()
+
+        return vo
+
 
 class SpeechDatabaseClient(DatabaseClient):
     def __init__(self) -> None:
