@@ -3,13 +3,13 @@ from sqlalchemy import BinaryExpression, Engine, create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 
-from configs import db
-from data.tables import AudioSegment, Speech
+from api.configs import db
+from api.data.tables import AudioSegment, Speech
 
 
 class DatabaseClient:
     def __init__(self) -> None:
-        self.config: db.DatabaseConfigs = db.DatabaseConfigs()
+        self.config: db.DatabaseConfigs = db.config
         self.engine: Engine = create_engine(
             self.config.get_full_url(), pool_size=20, pool_recycle=500, max_overflow=20
         )
