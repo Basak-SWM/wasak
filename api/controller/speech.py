@@ -34,11 +34,11 @@ class Analysis1(BaseModel):
     callback_url : stt 결과를 전송할 dalcom endpoint
     download_url : stt 입력 파일이 저장된 object의 presigned url
     ## wasak에서 쓸 값
-    upload_url : wasak에서 합친 오디오 파일(full audio)을 업로드할 presigned url @
+    upload_key : wasak에서 합친 오디오 파일(full audio)을 업로드할 key @
     """
 
     callback_url: str
-    upload_url: str
+    upload_key: str
     download_url: str
 
 
@@ -95,10 +95,9 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
 
     def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
         mp3_path = wav_to_mp3(merged_wav_file_path)
-        print(dto.upload_url)
+        s3_service.upload_object(mp3_path, dto.upload_key)
         mp3_path.unlink()
 
-    mp3_path = wav_to_mp3(merged_wav_file_path)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {
             # 4-1. Clova에 STT Request를 보낸다.
