@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.8.17"
 flask = "^2.3.2"
-boto3 = "^1.26.154"
+boto3 = "^1.26.76"
 python-dotenv = "^1.0.0"
 requests = "^2.31.0"
 boto = "^2.49.0"
@@ -26,6 +26,7 @@ cryptography = "^41.0.2"
 ffmpeg = "^1.4"
 pandas = "^2.0.3"
 ffmpeg-python = "^0.2.0"
+aioboto3 = "^11.2.0"
 
 
 [build-system]
