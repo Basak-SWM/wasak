@@ -3,14 +3,24 @@ import enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
     Column,
+    DateTime,
     Integer,
     String,
     ForeignKey,
     BigInteger,
     Enum,
+    func,
 )
 
 Base = declarative_base()
+
+
+class CreatedDateMixin:
+    created_date = Column(DateTime(), default=func.now())
+
+
+class FullDateMixin(CreatedDateMixin):
+    last_modified_date = Column(DateTime(), default=func.now())
 
 
 class AnalysisRecordType(enum.Enum):
@@ -21,19 +31,19 @@ class AnalysisRecordType(enum.Enum):
     PAUSE = "PAUSE"
 
 
-class AnalysisRecord(Base):
+class AnalysisRecord(CreatedDateMixin, Base):
     __tablename__ = "analysis_record"
     id = Column(BigInteger, primary_key=True)
     speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
     type = Column(Enum(AnalysisRecordType), nullable=False)
 
 
-class Speech(Base):
+class Speech(FullDateMixin, Base):
     __tablename__ = "speech"
     id = Column(Integer, primary_key=True)
 
 
-class AudioSegment(Base):
+class AudioSegment(CreatedDateMixin, Base):
     __tablename__ = "audio_segment"
     id = Column(BigInteger, primary_key=True)
     speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
