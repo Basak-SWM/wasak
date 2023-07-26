@@ -1,5 +1,3 @@
-import enum
-
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
     Column,
@@ -8,7 +6,6 @@ from sqlalchemy import (
     String,
     ForeignKey,
     BigInteger,
-    Enum,
     func,
 )
 
@@ -21,21 +18,6 @@ class CreatedDateMixin:
 
 class FullDateMixin(CreatedDateMixin):
     last_modified_date = Column(DateTime(), default=func.now())
-
-
-class AnalysisRecordType(enum.Enum):
-    STT = "STT"
-    DECIBEL = "DECIBEL"
-    HERTZ = "HERTZ"
-    WPM = "WPM"
-    PAUSE = "PAUSE"
-
-
-class AnalysisRecord(CreatedDateMixin, Base):
-    __tablename__ = "analysis_record"
-    id = Column(BigInteger, primary_key=True)
-    speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
-    type = Column(Enum(AnalysisRecordType), nullable=False)
 
 
 class Speech(FullDateMixin, Base):
