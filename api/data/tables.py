@@ -38,3 +38,15 @@ class AudioSegment(Base):
     id = Column(BigInteger, primary_key=True)
     speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
     url = Column(String, name="full_audios3url", nullable=False)
+
+    def __str__(self) -> str:
+        return f"AudioSegment(id={self.id}, speech_id={self.speech_id}, url={self.url})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def get_key(self) -> str:
+        return self.url.split("/")[-1]
+
+    def get_full_path(self) -> str:
+        return self.url.split(".com/")[-1]
