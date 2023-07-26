@@ -81,8 +81,8 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
         # key의 맨 앞자리에 timestamp가 들어 있으므로 정렬함
         audio_segment_file_paths.sort()
 
-    # 3. 해당 파일들을 wav로 합친다.
-    merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
+        # 3. 해당 파일들을 wav로 합친다.
+        merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
 
     # 직렬 작업 필요한 것들 하나의 함수로 wrapping
     def db_analysis_and_save_db():
@@ -95,7 +95,7 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
 
     def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
         mp3_path = wav_to_mp3(merged_wav_file_path)
-        # TODO: upload s3
+        print(dto.upload_url)
         mp3_path.unlink()
 
     mp3_path = wav_to_mp3(merged_wav_file_path)
