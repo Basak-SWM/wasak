@@ -28,6 +28,12 @@ class STTResult(CreatedDateMixin, Base):
     body = Column(Text, nullable=False)
 
 
+class DecibelAnalysisResult(CreatedDateMixin, Base):
+    __tablename__ = "decibel_analysis_result"
+    id = Column(BigInteger, primary_key=True)
+    body = Column(Text, nullable=False)
+
+
 class HertzAnalysisResult(CreatedDateMixin, Base):
     __tablename__ = "hertz_analysis_result"
     id = Column(BigInteger, primary_key=True)
