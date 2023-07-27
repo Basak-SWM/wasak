@@ -2,6 +2,8 @@ import os
 import requests
 from pathlib import Path
 
+from configs.clova import clova_speech_config
+
 
 def clova_stt_send(audio_file_path: Path, response_callback_url: str):
     request_body = {
@@ -10,10 +12,10 @@ def clova_stt_send(audio_file_path: Path, response_callback_url: str):
         "callback": response_callback_url,  # 결과 송신받을 콜백 URL
     }
 
-    headers = {"X-CLOVASPEECH-API-KEY": os.getenv("CLOVA_SECRET_KEY")}
+    headers = {"X-CLOVASPEECH-API-KEY": clova_speech_config.clova_secret_key}
 
     response = requests.post(
-        os.getenv("CLOVA_STT_TARGET_URL"), json=request_body, headers=headers
+        clova_speech_config.clova_stt_target_url, json=request_body, headers=headers
     )
 
     if response.status_code == 200:
