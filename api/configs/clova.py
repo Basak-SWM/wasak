@@ -8,4 +8,4 @@ class ClovaSpeechConfigs(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
-config = ClovaSpeechConfigs()
+clova_speech_config = ClovaSpeechConfigs()
