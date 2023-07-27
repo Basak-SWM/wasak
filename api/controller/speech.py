@@ -105,24 +105,27 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
         s3_service.upload_object(mp3_path, dto.upload_key)
         mp3_path.unlink()
 
+    clova_stt_send(merged_wav_file_path, dto.callback_url)
+    print("STT done")
+
     result = get_db_analysis(merged_wav_file_path)
     analysis_record_service.save_analysis_result(
         target_speech, AnalysisRecordType.DECIBEL, result
     )
-    print("done1")
+    print("DECIBEL done")
 
     result = get_f0_analysis(merged_wav_file_path)
     analysis_record_service.save_analysis_result(
         target_speech, AnalysisRecordType.HERTZ, result
     )
 
-    print("done2")
+    print("HERTZ done")
 
     mp3_path = wav_to_mp3(merged_wav_file_path)
     s3_service.upload_object(mp3_path, dto.upload_key)
     mp3_path.unlink()
 
-    print("done3")
+    print("Mp3 Upload done")
 
     merged_wav_file_path.unlink()
 
