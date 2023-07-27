@@ -23,10 +23,9 @@ pydantic-settings = "^2.0.2"
 mysqlclient = "^2.2.0"
 pymysql = "^1.1.0"
 cryptography = "^41.0.2"
-ffmpeg = "^1.4"
 pandas = "^2.0.3"
-ffmpeg-python = "^0.2.0"
 aioboto3 = "^11.2.0"
+ffmpeg-python = "^0.2.0"
 
 
 [build-system]
