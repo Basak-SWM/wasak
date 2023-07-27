@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 import tempfile
 
@@ -62,91 +63,85 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
         4-4-2. 변환된 mp3파일 삭제
     5. 모든 작업 후 wav 파일 삭제
     """
-    # 1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
-    target_speech: Speech = get_object_or_404(
-        speech_db_client, [Speech.id.bool_op("=")(speech_id)]
-    )
 
-    audio_segments: List[
-        AudioSegment
-    ] = audio_segment_db_client.select_audio_segments_of(target_speech)
+    def async_wrapper(executor):
+        try:
+            # tempfile 라이브러리 사용, pathlib로 경로 관리
+            tmp_dir_context = tempfile.TemporaryDirectory()
+            tmp_dir_path = Path(tmp_dir_context.name)
 
-    # 2. S3에서 해당 경로들의 파일들을 다운로드한다.
-    audio_segment_file_paths = []
-    with tempfile.TemporaryDirectory() as tmp_dir_path:
-        for audio_segment in audio_segments:
-            key = audio_segment.get_key()
-            file_path = os.path.join(tmp_dir_path, key)
-            audio_segment_file_paths.append(file_path)
+            # 1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
+            target_speech: Speech = get_object_or_404(
+                speech_db_client, [Speech.id.bool_op("=")(speech_id)]
+            )
 
-            s3_service.download_object(audio_segment.get_full_path(), file_path)
+            audio_segments: List[
+                AudioSegment
+            ] = audio_segment_db_client.select_audio_segments_of(target_speech)
 
-        # key의 맨 앞자리에 timestamp가 들어 있으므로 정렬함
-        audio_segment_file_paths.sort()
+            # 2. S3에서 해당 경로들의 파일들을 다운로드한다.
+            audio_segment_file_paths = []
 
-        # 3. 해당 파일들을 wav로 합친다.
-        merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
+            for audio_segment in audio_segments:
+                key = audio_segment.get_key()
+                file_path = tmp_dir_path / key
+                audio_segment_file_paths.append(str(file_path))
+                s3_service.download_object(audio_segment.get_full_path(), file_path)
 
-    # 직렬 작업 필요한 것들 하나의 함수로 wrapping
-    def db_analysis_and_save_db():
-        result = get_db_analysis(merged_wav_file_path)
-        analysis_record_service.save_analysis_result(
-            target_speech, AnalysisRecordType.DECIBEL, result
-        )
+            # key의 맨 앞자리에 timestamp가 들어 있으므로 정렬함
+            audio_segment_file_paths.sort()
 
-    def f0_analysis_and_save_db():
-        result = get_f0_analysis(merged_wav_file_path)
-        analysis_record_service.save_analysis_result(
-            target_speech, AnalysisRecordType.HERTZ, result
-        )
+            # 3. 해당 파일들을 wav로 합친다.
+            merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
 
-    def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
-        mp3_path = wav_to_mp3(merged_wav_file_path)
-        s3_service.upload_object(mp3_path, dto.upload_key)
-        mp3_path.unlink()
+            # 직렬 작업 필요한 것들 하나의 함수로 wrapping
+            def db_analysis_and_save_db():
+                result = get_db_analysis(merged_wav_file_path)
+                analysis_record_service.save_analysis_result(
+                    target_speech, AnalysisRecordType.DECIBEL, result
+                )
+                return True
 
-    clova_stt_send(merged_wav_file_path, dto.callback_url)
-    print("STT done")
+            def f0_analysis_and_save_db():
+                result = get_f0_analysis(merged_wav_file_path)
+                analysis_record_service.save_analysis_result(
+                    target_speech, AnalysisRecordType.HERTZ, result
+                )
+                return True
 
-    result = get_db_analysis(merged_wav_file_path)
-    analysis_record_service.save_analysis_result(
-        target_speech, AnalysisRecordType.DECIBEL, result
-    )
-    print("DECIBEL done")
+            def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
+                mp3_path = wav_to_mp3(merged_wav_file_path)
+                s3_service.upload_object(mp3_path, dto.upload_key)
+                mp3_path.unlink()
+                return True
 
-    result = get_f0_analysis(merged_wav_file_path)
-    analysis_record_service.save_analysis_result(
-        target_speech, AnalysisRecordType.HERTZ, result
-    )
+            futures = {
+                # 4-1. Clova에 STT Request를 보낸다.
+                executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
+                # 4-2. wav파일로 dB Analysis 후 DB 저장
+                executor.submit(db_analysis_and_save_db),
+                # 4-3. wav파일로 f0 Analysis 후 DB 저장
+                executor.submit(f0_analysis_and_save_db),
+                # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
+                executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
+            }
+            concurrent.futures.wait(futures)
 
-    print("HERTZ done")
+            # 5. 모든 작업 후 wav 파일 삭제
+            merged_wav_file_path.unlink()
+            result = True
 
-    mp3_path = wav_to_mp3(merged_wav_file_path)
-    s3_service.upload_object(mp3_path, dto.upload_key)
-    mp3_path.unlink()
+        except Exception as e:
+            # TODO: Advanced error handling
+            print("Error Occurred: ", (e))
 
-    print("Mp3 Upload done")
+        finally:
+            tmp_dir_context.cleanup()
+            return result
 
-    merged_wav_file_path.unlink()
-
-    # with concurrent.futures.ProcessPoolExecutor() as executor:
-    #     futures = {
-    #         # 4-1. Clova에 STT Request를 보낸다.
-    #         executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
-    #         # 4-2. wav파일로 dB Analysis 후 DB 저장
-    #         executor.submit(db_analysis_and_save_db),
-    #         # 4-3. wav파일로 f0 Analysis 후 DB 저장
-    #         executor.submit(f0_analysis_and_save_db),
-    #         # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
-    #         executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
-    #     }
-
-    #     # FIXME: 비동기 결과로 수행할 작업 있으면 아래 코드 사용, 없으면 삭제 요망
-    #     # for future in concurrent.futures.as_completed(futures):
-    #     #     print(future.result())  # or store the result, handle exceptions, etc.
-
-    #     # 5. 모든 작업 후 wav 파일 삭제
-    #     merged_wav_file_path.unlink()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(async_wrapper, executor)
+    return "success"
 
 
 @app.post("/{speech_id}/analysis-2")
