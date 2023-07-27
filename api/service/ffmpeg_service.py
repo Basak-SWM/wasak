@@ -38,14 +38,19 @@ def merge_webm_files_to_wav(webm_files_path_list: List[str]) -> str:
     merged_webm_file_path = get_cache_file_path("webm")
     ffmpeg.input(str(webm_list_text_file_path), format="concat", safe=0).output(
         str(merged_webm_file_path), c="copy"
-    ).run()
+    ).global_args("-loglevel", "error").run()
 
     # 3. webm 파일 목록 txt 파일 삭제
     webm_list_text_file_path.unlink()
 
     # 4. webm 파일 wav 변환
     output_wav_path = get_cache_file_path("wav")
-    (ffmpeg.input(str(merged_webm_file_path)).output(str(output_wav_path)).run())
+    (
+        ffmpeg.input(str(merged_webm_file_path))
+        .output(str(output_wav_path))
+        .global_args("-loglevel", "error")
+        .run()
+    )
 
     # 5. 변환 후 병합된 원본 webm 파일 삭제
     merged_webm_file_path.unlink()
@@ -68,6 +73,7 @@ def wav_to_mp3(wav_file_path: Path) -> Path:
     (
         ffmpeg.input(str(wav_file_path))
         .output(str(output_mp3_path), ar=22050, ab="64k")
+        .global_args("-loglevel", "error")
         .run()
     )
 
