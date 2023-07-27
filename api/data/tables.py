@@ -20,9 +20,15 @@ class FullDateMixin(CreatedDateMixin):
     last_modified_date = Column(DateTime(), default=func.now())
 
 
+class Presentation(FullDateMixin, Base):
+    __tablename__ = "presentation"
+    id = Column(Integer, primary_key=True)
+
+
 class Speech(FullDateMixin, Base):
     __tablename__ = "speech"
     id = Column(Integer, primary_key=True)
+    presentation_id = Column(Integer, ForeignKey("presentation.id"), nullable=False)
 
 
 class AudioSegment(CreatedDateMixin, Base):

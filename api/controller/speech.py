@@ -6,10 +6,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import concurrent.futures
 
-
 from api.data.client import SpeechDatabaseClient, AudioSegmentDatabaseClient
 from api.data.shortcuts import get_object_or_404
 from api.data.tables import Speech, AudioSegment
+from api.data.enums import AnalysisRecordType
+
+from api.service.analysis_record import AnalysisRecordService
 
 from api.service.aws.s3 import S3Service
 from api.service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
@@ -25,6 +27,7 @@ app = FastAPI()
 speech_db_client = SpeechDatabaseClient()
 audio_segment_db_client = AudioSegmentDatabaseClient()
 
+analysis_record_service = AnalysisRecordService()
 s3_service = S3Service()
 
 
@@ -86,36 +89,61 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
 
     # 직렬 작업 필요한 것들 하나의 함수로 wrapping
     def db_analysis_and_save_db():
-        get_db_analysis(merged_wav_file_path, dto.callback_url)
-        # TODO: 결과 DB 저장
+        result = get_db_analysis(merged_wav_file_path)
+        analysis_record_service.save_analysis_result(
+            target_speech, AnalysisRecordType.DECIBEL, result
+        )
 
     def f0_analysis_and_save_db():
-        get_f0_analysis(merged_wav_file_path)
-        # TODO: 결과 DB 저장
+        result = get_f0_analysis(merged_wav_file_path)
+        analysis_record_service.save_analysis_result(
+            target_speech, AnalysisRecordType.HERTZ, result
+        )
 
     def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
         mp3_path = wav_to_mp3(merged_wav_file_path)
         s3_service.upload_object(mp3_path, dto.upload_key)
         mp3_path.unlink()
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {
-            # 4-1. Clova에 STT Request를 보낸다.
-            executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
-            # 4-2. wav파일로 dB Analysis 후 DB 저장
-            executor.submit(db_analysis_and_save_db),
-            # 4-3. wav파일로 f0 Analysis 후 DB 저장
-            executor.submit(f0_analysis_and_save_db),
-            # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
-            executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
-        }
+    result = get_db_analysis(merged_wav_file_path)
+    analysis_record_service.save_analysis_result(
+        target_speech, AnalysisRecordType.DECIBEL, result
+    )
+    print("done1")
 
-        # FIXME: 비동기 결과로 수행할 작업 있으면 아래 코드 사용, 없으면 삭제 요망
-        # for future in concurrent.futures.as_completed(futures):
-        #     print(future.result())  # or store the result, handle exceptions, etc.
+    result = get_f0_analysis(merged_wav_file_path)
+    analysis_record_service.save_analysis_result(
+        target_speech, AnalysisRecordType.HERTZ, result
+    )
 
-        # 5. 모든 작업 후 wav 파일 삭제
-        merged_wav_file_path.unlink()
+    print("done2")
+
+    mp3_path = wav_to_mp3(merged_wav_file_path)
+    s3_service.upload_object(mp3_path, dto.upload_key)
+    mp3_path.unlink()
+
+    print("done3")
+
+    merged_wav_file_path.unlink()
+
+    # with concurrent.futures.ProcessPoolExecutor() as executor:
+    #     futures = {
+    #         # 4-1. Clova에 STT Request를 보낸다.
+    #         executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
+    #         # 4-2. wav파일로 dB Analysis 후 DB 저장
+    #         executor.submit(db_analysis_and_save_db),
+    #         # 4-3. wav파일로 f0 Analysis 후 DB 저장
+    #         executor.submit(f0_analysis_and_save_db),
+    #         # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
+    #         executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
+    #     }
+
+    #     # FIXME: 비동기 결과로 수행할 작업 있으면 아래 코드 사용, 없으면 삭제 요망
+    #     # for future in concurrent.futures.as_completed(futures):
+    #     #     print(future.result())  # or store the result, handle exceptions, etc.
+
+    #     # 5. 모든 작업 후 wav 파일 삭제
+    #     merged_wav_file_path.unlink()
 
 
 @app.post("/{speech_id}/analysis-2")

@@ -27,6 +27,26 @@ class S3Service:
         key = f"{object_path}/{object_key}" if path else object_key
         self.client.upload_file(upload_file_path, self.get_default_bucket_name(), key)
 
+    def upload_json_object(
+        self, object_key: str, json_object: Any, *path: Tuple[Any]
+    ) -> None:
+        """버킷에 JSON object를 업로드한다.
+
+        Args:
+            object_key (str): 저장할 파일의 이름
+            json_object (Any): JSON object
+            *path (Tuple[Any]): 파일의 앞에 붙을 prefix를 나열
+        """
+        object_path = "/".join(map(str, path))
+        key = f"{object_path}/{object_key}" if path else object_key
+
+        self.client.put_object(
+            Bucket=self.get_default_bucket_name(),
+            Key=key,
+            Body=json_object,
+            ContentType="application/json",
+        )
+
     def download_object(self, obj_full_path: str, dest_path: str) -> str:
         """특정 S3 object 하나를 파일 시스템에 다운로드한다.
 
