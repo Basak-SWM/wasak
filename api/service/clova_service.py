@@ -2,7 +2,7 @@ import os
 import requests
 from pathlib import Path
 
-from configs.clova import clova_speech_config
+from api.configs.clova import clova_speech_config
 
 
 def clova_stt_send(audio_file_path: Path, response_callback_url: str):
