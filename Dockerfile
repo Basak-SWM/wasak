@@ -1,4 +1,4 @@
-FROM python:3.8.17 AS builder
+FROM python:3.8.17
 
 WORKDIR /app
 
@@ -7,10 +7,8 @@ RUN pip3 install poetry && poetry install --no-dev
 
 COPY . /app
 
-FROM linuxserver/ffmpeg
-
-COPY --from=builder /app /app
-
-WORKDIR /app
+RUN ["apt-get", "-y", "update"]
+RUN ["apt-get", "-y", "upgrade"]
+RUN ["apt-get", "install", "-y", "--no-install-recommends", "ffmpeg"]
 
 CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
