@@ -12,3 +12,6 @@ class DatabaseConfigs(BaseSettings):
         return f"mysql+pymysql://{self.db_username}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
+config = DatabaseConfigs()
