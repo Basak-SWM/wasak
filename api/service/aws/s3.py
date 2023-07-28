@@ -25,6 +25,12 @@ class S3Service:
         """
         object_path = "/".join(map(str, path))
         key = f"{object_path}/{object_key}" if path else object_key
+        print("S3Service.upload_object start =====================")
+        print("object_path:", object_path)
+        print("key:", key)
+        print("self.get_default_bucket_name():", self.get_default_bucket_name())
+        print("S3Service.upload_object end =======================")
+
         self.client.upload_file(upload_file_path, self.get_default_bucket_name(), key)
 
     def upload_json_object(
