@@ -64,6 +64,10 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
     5. 모든 작업 후 wav 파일 삭제
     """
 
+    print(dto.callback_url)
+    print(dto.upload_key)
+    print(dto.download_url)
+
     def async_wrapper(executor):
         try:
             # tempfile 라이브러리 사용, pathlib로 경로 관리
@@ -94,38 +98,52 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
             # 3. 해당 파일들을 wav로 합친다.
             merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
 
-            # 직렬 작업 필요한 것들 하나의 함수로 wrapping
-            def db_analysis_and_save_db():
-                result = get_db_analysis(merged_wav_file_path)
-                analysis_record_service.save_analysis_result(
-                    target_speech, AnalysisRecordType.DECIBEL, result
-                )
-                return True
+            result = get_db_analysis(merged_wav_file_path)
+            analysis_record_service.save_analysis_result(
+                target_speech, AnalysisRecordType.DECIBEL, result
+            )
 
-            def f0_analysis_and_save_db():
-                result = get_f0_analysis(merged_wav_file_path)
-                analysis_record_service.save_analysis_result(
-                    target_speech, AnalysisRecordType.HERTZ, result
-                )
-                return True
+            result = get_f0_analysis(merged_wav_file_path)
+            analysis_record_service.save_analysis_result(
+                target_speech, AnalysisRecordType.HERTZ, result
+            )
 
-            def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
-                mp3_path = wav_to_mp3(merged_wav_file_path)
-                s3_service.upload_object(mp3_path, dto.upload_key)
-                mp3_path.unlink()
-                return True
+            mp3_path = wav_to_mp3(merged_wav_file_path)
+            s3_service.upload_object(mp3_path, dto.upload_key)
+            mp3_path.unlink()
 
-            futures = {
-                # 4-1. Clova에 STT Request를 보낸다.
-                executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
-                # 4-2. wav파일로 dB Analysis 후 DB 저장
-                executor.submit(db_analysis_and_save_db),
-                # 4-3. wav파일로 f0 Analysis 후 DB 저장
-                executor.submit(f0_analysis_and_save_db),
-                # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
-                executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
-            }
-            concurrent.futures.wait(futures)
+            # # 직렬 작업 필요한 것들 하나의 함수로 wrapping
+            # def db_analysis_and_save_db():
+            #     result = get_db_analysis(merged_wav_file_path)
+            #     analysis_record_service.save_analysis_result(
+            #         target_speech, AnalysisRecordType.DECIBEL, result
+            #     )
+            #     return True
+
+            # def f0_analysis_and_save_db():
+            #     result = get_f0_analysis(merged_wav_file_path)
+            #     analysis_record_service.save_analysis_result(
+            #         target_speech, AnalysisRecordType.HERTZ, result
+            #     )
+            #     return True
+
+            # def convert_wav_to_mp3_and_upload_s3_and_remove_mp3():
+            #     mp3_path = wav_to_mp3(merged_wav_file_path)
+            #     s3_service.upload_object(mp3_path, dto.upload_key)
+            #     mp3_path.unlink()
+            #     return True
+
+            # futures = {
+            #     # 4-1. Clova에 STT Request를 보낸다.
+            #     executor.submit(clova_stt_send, merged_wav_file_path, dto.callback_url),
+            #     # 4-2. wav파일로 dB Analysis 후 DB 저장
+            #     executor.submit(db_analysis_and_save_db),
+            #     # 4-3. wav파일로 f0 Analysis 후 DB 저장
+            #     executor.submit(f0_analysis_and_save_db),
+            #     # 4-4. wav -> mp3 변환, S3에 업로드 후 삭제
+            #     executor.submit(convert_wav_to_mp3_and_upload_s3_and_remove_mp3),
+            # }
+            # concurrent.futures.wait(futures)
 
             # 5. 모든 작업 후 wav 파일 삭제
             merged_wav_file_path.unlink()
