@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Tuple, List
 
 
 def get_wpm_analysis(stt_json) -> int:
@@ -28,7 +28,7 @@ def get_wpm_analysis(stt_json) -> int:
     return letters_count / (stt_result["segments"][-1]["end"] / 1000 / 60)
 
 
-def get_lpm_by_sentense(stt_json) -> List[List[int, int, str]]:
+def get_lpm_by_sentense(stt_json) -> List[Tuple[int, int, str]]:
     """
     _summary_
         모든 segments 들을 순회하며 words 별로 걸린 시간 및 글자 수를 합산, '.'를 만나면 문장의 끝으로 판단하여 lpm_by_sentense를 계산한다.
@@ -39,7 +39,7 @@ def get_lpm_by_sentense(stt_json) -> List[List[int, int, str]]:
     Returns:
         문장별 lpm 분석을 속도가 빠른 순서대로 반환.
         [
-            [start_time, end_time, lpm],
+            (start_time, end_time, lpm),
         ]
 
     """
