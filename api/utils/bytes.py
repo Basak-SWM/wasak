@@ -1,7 +1,7 @@
 from typing import List
 
 
-def concat(paths: List[str]) -> bytes:
+def concat_files(paths: List[str]) -> bytes:
     read_bytes = []
 
     for path in paths:
@@ -12,7 +12,7 @@ def concat(paths: List[str]) -> bytes:
 
 
 if __name__ == "__main__":
-    result = concat(
+    result = concat_files(
         ["./compressed/1.webm", "./compressed/2.webm", "./compressed/3.webm"]
     )
 

@@ -2,6 +2,7 @@ import ffmpeg
 from pathlib import Path
 from typing import List
 from api.service.cache_service import get_cache_file_path
+from api.utils.bytes import concat_files
 
 """
 *주의* ffmpeg가 OS의 PATH에 등록되어 있어야 함.
@@ -22,28 +23,13 @@ def merge_webm_files_to_wav(webm_files_path_list: List[str]) -> str:
         Path: 생성된 wav 파일 경로 (S3 업로드 후 해당 파일 삭제해야 함.)
     """
 
-    # 1. 병합 대상 webm 파일들의 절대 경로들을 txt 파일에 기록한다.
-    webm_list_text_file_path = get_cache_file_path("txt")
-
-    with open(webm_list_text_file_path, "w") as f:
-        for item in webm_files_path_list:
-            if (target_path := Path(item)).is_file():
-                f.write(f"file '{target_path}'\n")
-            else:
-                raise FileNotFoundError(
-                    f"Audio Segment File {target_path} is not found."
-                )
-
-    # 2. ffmpeg로 음성 파일 목록 txt 파일 읽어서 하나의 webm 파일로 병합한다.
+    # 1. 병합 대상 webm 파일들을 단순 binary concat 통해서 이어붙임.
+    merged_webm_binary = concat_files(webm_files_path_list)
     merged_webm_file_path = get_cache_file_path("webm")
-    ffmpeg.input(str(webm_list_text_file_path), format="concat", safe=0).output(
-        str(merged_webm_file_path), c="copy"
-    ).global_args("-loglevel", "error").run()
+    with open(merged_webm_file_path, "wb") as f:
+        f.write(merged_webm_binary)
 
-    # 3. webm 파일 목록 txt 파일 삭제
-    webm_list_text_file_path.unlink()
-
-    # 4. webm 파일 wav 변환
+    # 2. ffmpeg 이용해서 webm 파일 wav 변환
     output_wav_path = get_cache_file_path("wav")
     (
         ffmpeg.input(str(merged_webm_file_path))
@@ -52,7 +38,7 @@ def merge_webm_files_to_wav(webm_files_path_list: List[str]) -> str:
         .run()
     )
 
-    # 5. 변환 후 병합된 원본 webm 파일 삭제
+    # 3. 변환 후 병합된 원본 webm 파일 삭제
     merged_webm_file_path.unlink()
 
     return output_wav_path
