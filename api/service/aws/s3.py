@@ -46,6 +46,9 @@ class S3Service:
         object_path = "/".join(map(str, path))
         key = f"{object_path}/{object_key}" if path else object_key
 
+        print("bucket:", self.get_default_bucket_name())
+        print("key:", key)
+
         self.client.put_object(
             Bucket=self.get_default_bucket_name(),
             Key=key,
