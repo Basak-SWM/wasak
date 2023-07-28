@@ -26,7 +26,8 @@ class S3Service:
         object_path = "/".join(map(str, path))
         key = f"{object_path}/{object_key}" if path else object_key
         print("S3Service.upload_object start =====================")
-        print("object_path:", object_path)
+        if object_path:
+            print("object_path:", object_path)
         print("key:", key)
         print("self.get_default_bucket_name():", self.get_default_bucket_name())
         print("S3Service.upload_object end =======================")
@@ -49,12 +50,14 @@ class S3Service:
         print("bucket:", self.get_default_bucket_name())
         print("key:", key)
 
-        self.client.put_object(
+        ret = self.client.put_object(
             Bucket=self.get_default_bucket_name(),
             Key=key,
             Body=json_object,
             ContentType="application/json",
         )
+        print("ret:", ret)
+        print()
 
     def download_object(self, obj_full_path: str, dest_path: str) -> str:
         """특정 S3 object 하나를 파일 시스템에 다운로드한다.
