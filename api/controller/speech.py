@@ -104,7 +104,9 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
         mp3_path.unlink()
 
         # 직렬 작업 필요한 것들 하나의 함수로 wrapping
-        clova_stt_send(dto.download_url, dto.callback_url)
+        success = clova_stt_send(dto.download_url, dto.callback_url)
+        if not success:
+            raise Exception("STT Failed")
 
         # TODO : 분석 시작
 

@@ -10,7 +10,6 @@ def clova_stt_send(s3_audio_file_path: str, response_callback_url: str):
         "url": s3_audio_file_path,  # 분석할 음성 파일 URL
         "language": "ko-KR",
         "callback": response_callback_url,  # 결과 송신받을 콜백 URL
-        "resultToObs": True,
     }
 
     headers = {"X-CLOVASPEECH-API-KEY": clova_speech_config.clova_secret_key}
@@ -24,8 +23,9 @@ def clova_stt_send(s3_audio_file_path: str, response_callback_url: str):
         clova_speech_config.clova_stt_target_url, json=request_body, headers=headers
     )
 
+    print(response.status_code)
+    print(response.json())
     if response.status_code == 200:
-        print(response.json())
         return True
     else:
         return False
