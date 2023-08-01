@@ -16,6 +16,7 @@ from api.data.enums import AnalysisRecordType
 from api.service.analysis_record import AnalysisRecordService
 
 from api.service.aws.s3 import S3Service
+from api.service.speech import SpeechService
 from api.service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
 from api.service.clova_service import clova_stt_send
 from api.service.audio_analysis_service import (
@@ -32,6 +33,7 @@ audio_segment_db_client = AudioSegmentDatabaseClient()
 
 analysis_record_service = AnalysisRecordService()
 s3_service = S3Service()
+speech_service = SpeechService()
 
 
 class Analysis1(BaseModel):
@@ -208,15 +210,15 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
     return "success"
 
 
-class Analysis2(BaseModel):
-    """
-    ## STT 결과 분석
-    presentation_id: p.id for target speech
-    speech_id: s.id for target speech
-    """
+class Analysis2Dto(BaseModel):
+    speech_id: int
+    presentation_id: int
+
+    def get_stt_key(self):
+        return f"{self.presentation_id}/{self.speech_id}/analysis/STT.json"
 
 
-def analysis_2_async_service():
+def analysis_2_async_service(dto: Analysis2Dto):
     """
     ## STT 결과가 필요한 음성 분석 수행
     1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
@@ -225,7 +227,11 @@ def analysis_2_async_service():
     """
     # STT 결과 S3에서 받아온다.
     # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
-    # TODO:
+    stt_key = dto.get_stt_key()
+    stt_script = s3_service.download_json_object(stt_key)
+    concatenated_script = speech_service.get_concatenated_stt_script(stt_script)
+
+    s3_service.upload_json_object(stt_key, concatenated_script)
     # 2-1. 휴지 분석 수행
     get_lpm_by_sentense()
 
@@ -234,6 +240,8 @@ def analysis_2_async_service():
 
 
 @app.post("/{speech_id}/analysis-2")
-def trigger_analysis_2(background_tasks: BackgroundTasks):
-    background_tasks.add_task(analysis_2_async_service, 2)
+def trigger_analysis_2(
+    speech_id: int, dto: Analysis2Dto, background_tasks: BackgroundTasks
+):
+    background_tasks.add_task(analysis_2_async_service, dto)
     return "success"
