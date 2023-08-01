@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
+from time import sleep
 from typing import List
 import tempfile
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 import concurrent.futures
 
@@ -21,6 +22,7 @@ from api.service.audio_analysis_service import (
     get_db_analysis,
     get_f0_analysis,
 )
+from api.service.stt_analysis_service import get_lpm_by_sentense, get_wpm_analysis
 
 app = FastAPI()
 
@@ -206,6 +208,32 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
     return "success"
 
 
+class Analysis2(BaseModel):
+    """
+    ## STT 결과 분석
+    presentation_id: p.id for target speech
+    speech_id: s.id for target speech
+    """
+
+
+def analysis_2_async_service():
+    """
+    ## STT 결과가 필요한 음성 분석 수행
+    1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
+    2-1. 휴지 분석 수행
+    2-2. LPM 분석 수행
+    """
+    # STT 결과 S3에서 받아온다.
+    # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
+    # TODO:
+    # 2-1. 휴지 분석 수행
+    get_lpm_by_sentense()
+
+    # 2-2. LPM 분석 수행
+    get_wpm_analysis()
+
+
 @app.post("/{speech_id}/analysis-2")
-def trigger_analysis_2():
-    return None
+def trigger_analysis_2(background_tasks: BackgroundTasks):
+    background_tasks.add_task(analysis_2_async_service, 2)
+    return "success"
