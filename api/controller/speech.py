@@ -98,8 +98,15 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
         # 3. 해당 파일들을 wav로 합친다.
         merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
 
+        # 4. 병합된 wav 파일을 mp3로 변환하여 S3에 업로드한다.
+        mp3_path = wav_to_mp3(merged_wav_file_path)
+        s3_service.upload_object(mp3_path, dto.upload_key)
+        mp3_path.unlink()
+
         # 직렬 작업 필요한 것들 하나의 함수로 wrapping
-        clova_stt_send(merged_wav_file_path, dto.callback_url)
+        clova_stt_send(dto.download_url, dto.callback_url)
+
+        # TODO : 분석 시작
 
         # 5. 모든 작업 후 wav 파일 삭제
         merged_wav_file_path.unlink()
