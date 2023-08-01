@@ -64,6 +64,57 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
     5. 모든 작업 후 wav 파일 삭제
     """
 
+    # ==========================================================================================
+    # WARNING : STT 실행 결과 확인을 위해 임시로 STT까지만 동기 방식으로 실행되도록 함
+    # TODO : @Poxios가 비동기 로직 구현 완료하면, 아래 부분 삭제하고 아래 주석 처리된 부분을 수행하는 코드로 대체할 것!
+    # ==========================================================================================
+
+    try:
+        # tempfile 라이브러리 사용, pathlib로 경로 관리
+        tmp_dir_context = tempfile.TemporaryDirectory()
+        tmp_dir_path = Path(tmp_dir_context.name)
+
+        # 1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
+        target_speech: Speech = get_object_or_404(
+            speech_db_client, [Speech.id.bool_op("=")(speech_id)]
+        )
+
+        audio_segments: List[
+            AudioSegment
+        ] = audio_segment_db_client.select_audio_segments_of(target_speech)
+
+        # 2. S3에서 해당 경로들의 파일들을 다운로드한다.
+        audio_segment_file_paths = []
+
+        for audio_segment in audio_segments:
+            key = audio_segment.get_key()
+            file_path = tmp_dir_path / key
+            audio_segment_file_paths.append(str(file_path))
+            s3_service.download_object(audio_segment.get_full_path(), file_path)
+
+        # key의 맨 앞자리에 timestamp가 들어 있으므로 정렬함
+        audio_segment_file_paths.sort()
+
+        # 3. 해당 파일들을 wav로 합친다.
+        merged_wav_file_path = merge_webm_files_to_wav(audio_segment_file_paths)
+
+        # 직렬 작업 필요한 것들 하나의 함수로 wrapping
+        clova_stt_send(merged_wav_file_path, dto.callback_url)
+
+        # 5. 모든 작업 후 wav 파일 삭제
+        merged_wav_file_path.unlink()
+        result = True
+
+    except Exception as e:
+        # TODO: Advanced error handling
+        print("Error Occurred: ", (e))
+        print(e.__traceback__)
+
+    finally:
+        tmp_dir_context.cleanup()
+        return result
+    # ==========================================================================================
+
     def async_wrapper(executor):
         try:
             # tempfile 라이브러리 사용, pathlib로 경로 관리
