@@ -14,17 +14,10 @@ def clova_stt_send(s3_audio_file_path: str, response_callback_url: str):
 
     headers = {"X-CLOVASPEECH-API-KEY": clova_speech_config.clova_secret_key}
 
-    print(
-        "clova_speech_config.clova_stt_target_url:",
-        clova_speech_config.clova_stt_target_url,
-    )
-    print("request_body:", request_body)
     response: requests.Response = requests.post(
         clova_speech_config.clova_stt_target_url, json=request_body, headers=headers
     )
 
-    print(response.status_code)
-    print(response.json())
     if response.status_code == 200:
         return True
     else:

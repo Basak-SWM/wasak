@@ -1,3 +1,4 @@
+import json
 from typing import Any, Tuple
 
 import boto3
@@ -25,12 +26,6 @@ class S3Service:
         """
         object_path = "/".join(map(str, path))
         key = f"{object_path}/{object_key}" if path else object_key
-        print("S3Service.upload_object start =====================")
-        if object_path:
-            print("object_path:", object_path)
-        print("key:", key)
-        print("self.get_default_bucket_name():", self.get_default_bucket_name())
-        print("S3Service.upload_object end =======================")
 
         self.client.upload_file(upload_file_path, self.get_default_bucket_name(), key)
 
@@ -47,8 +42,8 @@ class S3Service:
         object_path = "/".join(map(str, path))
         key = f"{object_path}/{object_key}" if path else object_key
 
-        print("bucket:", self.get_default_bucket_name())
-        print("key:", key)
+        if not (isinstance(json_object, bytes) or isinstance(json_object, bytearray)):
+            json_object = json.dumps(json_object, ensure_ascii=False)
 
         ret = self.client.put_object(
             Bucket=self.get_default_bucket_name(),
@@ -56,8 +51,20 @@ class S3Service:
             Body=json_object,
             ContentType="application/json",
         )
-        print("ret:", ret)
-        print()
+
+    def download_json_object(self, object_key: str) -> Any:
+        """버킷에서 JSON object를 다운로드한다.
+
+        Args:
+            object_key (str): 다운로드할 파일의 이름
+
+        Returns:
+            Any: 다운로드된 JSON object
+        """
+        bucket_name = self.get_default_bucket_name()
+        response = self.client.get_object(Bucket=bucket_name, Key=object_key)
+        str_result = response["Body"].read().decode("utf-8")
+        return json.loads(str_result)
 
     def download_object(self, obj_full_path: str, dest_path: str) -> str:
         """특정 S3 object 하나를 파일 시스템에 다운로드한다.
