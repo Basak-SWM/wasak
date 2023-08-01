@@ -69,6 +69,8 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
     # TODO : @Poxios가 비동기 로직 구현 완료하면, 아래 부분 삭제하고 아래 주석 처리된 부분을 수행하는 코드로 대체할 것!
     # ==========================================================================================
 
+    result = False
+
     try:
         # tempfile 라이브러리 사용, pathlib로 경로 관리
         tmp_dir_context = tempfile.TemporaryDirectory()
