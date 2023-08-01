@@ -59,7 +59,7 @@ class S3Service:
             object_key (str): 다운로드할 파일의 이름
 
         Returns:
-            Any: 다운로드된 JSON object
+            Any(정상적으로 stt 결과 로드되었다면 dict): 다운로드된 JSON object
         """
         bucket_name = self.get_default_bucket_name()
         response = self.client.get_object(Bucket=bucket_name, Key=object_key)
