@@ -229,7 +229,7 @@ def analysis_2_async_service(dto: Analysis2Dto):
     # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
     stt_key = dto.get_stt_key()
     stt_script = s3_service.download_json_object(stt_key)
-    concatenated_script = speech_service.get_concatenated_stt_script(stt_script)
+    concatenated_script = speech_service.get_kss_aligned_script(stt_script)
 
     s3_service.upload_json_object(stt_key, concatenated_script)
     # 2-1. 휴지 분석 수행
