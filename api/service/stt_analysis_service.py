@@ -128,7 +128,7 @@ def get_average_ptl_percent(stt_json: dict):
                 end_time_before = end
             else:
                 paused_time_candidate = segment["words"][idx + 1][0] - end
-            if paused_time_candidate >= 100:
+            if paused_time_candidate >= 100 or True:
                 paused_time += paused_time_candidate
 
     return paused_time / stt_json["segments"][-1]["end"] * 100
@@ -136,7 +136,9 @@ def get_average_ptl_percent(stt_json: dict):
 
 if __name__ == "__main__":
     with open(
-        "/Users/cyh/Downloads/basak-test_y2mate.com - 서양에선 왜 비가와도 우산을 쓰지 않을까 우산 속에 숨겨진 마초 문화.mp3_2023-07-04-202627147 (2).json",
+        "TEST_FILE_URL_HERE",
         "r",
     ) as f:
-        print(get_average_ptl_percent(json.loads(f.read())))
+        a = f.read()
+
+        print(get_average_ptl_percent(json.loads(a)))
