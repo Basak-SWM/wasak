@@ -40,6 +40,7 @@ def get_lpm_by_sentense(stt_json: str) -> List[Tuple[int, int, str]]:
         len(s["text"].replace(" ", "").replace(".", ""))
         / (s["end"] - s["start"])
         * 1000
+        * 60
         for s in stt_json["segments"]
     ]
 
@@ -101,11 +102,24 @@ def get_average_ptl_percent(stt_json: dict):
     return paused_time / stt_json["segments"][-1]["end"] * 100
 
 
+# TEST
 if __name__ == "__main__":
     with open(
-        "TEST_FILE_URL_HERE",
+        "/Users/cyh/cyh/programming/wasak/research/samples/kss_concatenated_script_sample.json",
         "r",
     ) as f:
-        a = f.read()
+        concatenated_script = json.loads(f.read())
 
-        print(get_average_ptl_percent(json.loads(a)))
+    ptl_by_sentence = get_ptl_by_sentense(concatenated_script)
+    ptl_avg = get_average_ptl_percent(concatenated_script)
+
+    lpm_by_sentence = get_lpm_by_sentense(concatenated_script)
+    lpm_avg = get_average_lpm(concatenated_script)
+
+    temp = [ptl_by_sentence, ptl_avg, lpm_by_sentence, lpm_avg]
+
+    with open(
+        "test_result.json",
+        "w",
+    ) as f:
+        f.write(json.dumps(temp))
