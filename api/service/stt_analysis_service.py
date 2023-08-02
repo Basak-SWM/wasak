@@ -101,65 +101,37 @@ def get_ptl_by_sentense(stt_json: str):
     return ptl_by_sentense
 
 
-def get_average_ptl_VER1(stt_json: str):
+def get_average_ptl_percent(stt_json: dict):
     """
     _summary_
-        말을 하고 있지 않은 시간이 전체 대본 스크립트에서
-        몇 퍼센트를 차지하는지 계산한다.
+        ptl (pause time length) 계산 함수
+        단어 간 사이 공백 시간들 중 100ms를 넘어가는 것만 휴지로 판단하여 합산.
 
     Args:
-        stt_json (str): Clova에서 받은 STT 결과
+        stt_json (dict): Clova에서 받은 STT 결과
 
     Returns:
+        float: 전체 휴지 시간 / 전체 시간 * 100
 
     """
-    stt_result = json.loads(stt_json)
-
-    # 시간 단위는 millisecond
-    elapsed_time = 0
-    total_time = stt_result["segments"][-1]["end"]
-
-    for segment in stt_result["segments"]:
-        for word in segment["words"]:
-            elapsed_time += word[1] - word[0]
-
-    average_ptl = (1 - (elapsed_time / total_time)) * 100
-
-    return average_ptl
-
-
-def get_average_ptl_VER2(stt_json: str):
-    """
-    _summary_
-        문장 별 사이 시간만 휴지로 계산한다.
-
-    Args:
-        stt_json (str): Clova에서 받은 STT 결과
-
-    Returns:
-
-    """
-    stt_result = json.loads(stt_json)
+    paused_time = 0
     end_time_before = -1
 
-    # 시간 단위는 millisecond
-    paused_time = 0
-    total_time = stt_result["segments"][-1]["end"]
-
-    for segment in stt_result["segments"]:
-        for start, end, word in segment["words"]:
-            # 임시 저장되어있으면 문장 시작 전까지의 시간을 계산하여 휴지 기간에 더함.
-            if not end_time_before == -1:
-                paused_time += start - end_time_before
+    for segment in stt_json["segments"]:
+        for idx, (start, end, word) in enumerate(segment["words"]):
+            paused_time_candidate = 0
+            # 현재 segment의 끝이면 다음 segment의 첫 단어까지의 시간 계산
+            if end_time_before != -1:
+                paused_time_candidate = start - end_time_before
                 end_time_before = -1
-
-            # 문장이 끝나면 바로 뒤에 문장 시작 전까지의 시간 계산 위해 끝나는 시간 임시 저장
-            if "." in word or "?" in word or "!" in word:
+            if idx + 1 == len(segment["words"]):
                 end_time_before = end
+            else:
+                paused_time_candidate = segment["words"][idx + 1][0] - end
+            if paused_time_candidate >= 100:
+                paused_time += paused_time_candidate
 
-    average_ptl = (paused_time / total_time) * 100
-
-    return average_ptl
+    return paused_time / stt_json["segments"][-1]["end"] * 100
 
 
 if __name__ == "__main__":
@@ -167,6 +139,4 @@ if __name__ == "__main__":
         "/Users/cyh/Downloads/basak-test_y2mate.com - 서양에선 왜 비가와도 우산을 쓰지 않을까 우산 속에 숨겨진 마초 문화.mp3_2023-07-04-202627147 (2).json",
         "r",
     ) as f:
-        stt_json = f.read()
-
-    print(get_ptl_by_sentense(stt_json))
+        print(get_average_ptl_percent(json.loads(f.read())))
