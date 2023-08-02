@@ -53,30 +53,18 @@ def get_ptl_by_sentense(stt_json: str):
         걸리는 시간을 휴지로 판단하여 문장별 ptl(pause time)을 계산한다.
 
     Args:
-        stt_json (str): Clova에서 받은 STT 결과
+        stt_json (dict): Clova에서 받은 STT 결과를 reconstruct한 json
 
     Returns:
-    [
+    List[tuple[int, int]]]:
         (각 문장의 끝나는 시간, 이어지는 문장 직전까지의 휴지 기간 (ms)),
-    ]
 
     """
-    stt_result = json.loads(stt_json)
-    end_time_before = -1
-    ptl_by_sentense = []
-
-    for segment in stt_result["segments"]:
-        for start, end, word in segment["words"]:
-            # 임시 저장되어있으면 문장 시작 전까지의 시간을 계산하여 휴지 기간에 더함.
-            if not end_time_before == -1:
-                paused_time = start - end_time_before
-                ptl_by_sentense.append([end_time_before, paused_time])
-                end_time_before = -1
-
-            # 문장이 끝나면 바로 뒤에 문장 시작 전까지의 시간 계산 위해 끝나는 시간 임시 저장
-            if "." in word or "?" in word or "!" in word:
-                end_time_before = end
-
+    ptl_by_sentense = [
+        (sentence["end"], stt_json["segments"][idx + 1]["start"] - sentence["end"])
+        for idx, sentence in enumerate(stt_json["segments"])
+        if idx + 1 != len(stt_json["segments"])
+    ]
     return ptl_by_sentense
 
 
