@@ -4,6 +4,15 @@ from typing import Any, Tuple
 import boto3
 
 from api.configs.aws.s3 import config as s3_config
+from api.data.enums import AnalysisRecordType
+
+
+def get_analysis_result_save_url(
+    presentation_id: int,
+    speech_id: int,
+    analysis_type: AnalysisRecordType,
+):
+    return f"{presentation_id}/{speech_id}/analysis/{analysis_type}.json"
 
 
 class S3Service:
