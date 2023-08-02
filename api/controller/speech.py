@@ -220,7 +220,7 @@ class Analysis2Dto(BaseModel):
 def trigger_analysis_2(speech_id: int, dto: Analysis2Dto):
     stt_key = dto.get_stt_key()
     stt_script = s3_service.download_json_object(stt_key)
-    concatenated_script = speech_service.get_concatenated_stt_script(stt_script)
+    concatenated_script = speech_service.get_kss_aligned_script(stt_script)
 
     s3_service.upload_json_object(stt_key, concatenated_script)
 
