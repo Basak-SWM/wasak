@@ -8,4 +8,4 @@ class AnalysisRecordType(enum.Enum):
     LPM = "LPM"
     LPM_AVG = "LPM_AVG"
     PAUSE = "PAUSE"
-    PAUSE_AVG = "PAUSE_AVG"
+    PAUSE_RATIO = "PAUSE_RATIO"
