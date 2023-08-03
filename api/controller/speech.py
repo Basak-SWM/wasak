@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
+from time import sleep
 from typing import List
 import tempfile
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 import concurrent.futures
 
@@ -14,13 +15,19 @@ from api.data.enums import AnalysisRecordType
 
 from api.service.analysis_record import AnalysisRecordService
 
-from api.service.aws.s3 import S3Service
+from api.service.aws.s3 import S3Service, get_analysis_result_save_url
 from api.service.speech import SpeechService
 from api.service.ffmpeg_service import merge_webm_files_to_wav, wav_to_mp3
 from api.service.clova_service import clova_stt_send
 from api.service.audio_analysis_service import (
     get_db_analysis,
     get_f0_analysis,
+)
+from api.service.stt_analysis_service import (
+    get_average_lpm,
+    get_lpm_by_sentense,
+    get_average_ptl_percent,
+    get_ptl_by_sentense,
 )
 
 app = FastAPI()
@@ -216,12 +223,61 @@ class Analysis2Dto(BaseModel):
         return f"{self.presentation_id}/{self.speech_id}/analysis/STT.json"
 
 
-@app.post("/{speech_id}/analysis-2")
-def trigger_analysis_2(speech_id: int, dto: Analysis2Dto):
+def analysis_2_async_service(dto: Analysis2Dto):
+    """
+    ## STT 결과가 필요한 음성 분석 수행
+    1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
+    2-1. 휴지 분석 수행
+    2-2. LPM 분석 수행
+    """
+    # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
     stt_key = dto.get_stt_key()
     stt_script = s3_service.download_json_object(stt_key)
-    concatenated_script = speech_service.get_kss_aligned_script(stt_script)
 
+    # 2. STT 결과를 kiwi를 이용하여 문장 별로 분할하여 재조합한다.
+    concatenated_script = speech_service.get_aligned_script(stt_script)
     s3_service.upload_json_object(stt_key, concatenated_script)
 
-    return None
+    # 3-1. 휴지 분석 수행
+    s3_service.upload_json_object(
+        get_analysis_result_save_url(
+            dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE
+        ),
+        get_ptl_by_sentense(concatenated_script),
+    )
+    print("[LOG] 3-1. 휴지 분석 수행 완료")
+
+    # 3-2. LPM 분석 수행
+    s3_service.upload_json_object(
+        get_analysis_result_save_url(
+            dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM
+        ),
+        get_lpm_by_sentense(concatenated_script),
+    )
+    print("[LOG] 3-2. LPM 분석 수행 완료")
+
+    # 3-3. Average 휴지 (PTL) 분석 수행
+    s3_service.upload_json_object(
+        get_analysis_result_save_url(
+            dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_AVG
+        ),
+        get_average_ptl_percent(concatenated_script),
+    )
+    print("[LOG] 3-3. Average 휴지 (PTL) 분석 수행 완료")
+
+    # 3-4. Average LPM 분석 수행
+    s3_service.upload_json_object(
+        get_analysis_result_save_url(
+            dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM_AVG
+        ),
+        get_average_lpm(concatenated_script),
+    )
+    print("[LOG] 3-4. Average LPM 분석 수행 완료")
+
+
+@app.post("/{speech_id}/analysis-2")
+def trigger_analysis_2(
+    speech_id: int, dto: Analysis2Dto, background_tasks: BackgroundTasks
+):
+    background_tasks.add_task(analysis_2_async_service, dto)
+    return "success"
