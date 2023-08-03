@@ -112,6 +112,8 @@ def trigger_analysis_1(speech_id: int, dto: Analysis1):
         # 4. 병합된 wav 파일을 mp3로 변환하여 S3에 업로드한다.
         mp3_path = wav_to_mp3(merged_wav_file_path)
         s3_service.upload_object(mp3_path, dto.upload_key)
+        full_audio_path = dto.download_url.split("?")[0]
+        speech_service.update_full_audio_s3_url(target_speech, full_audio_path)
         mp3_path.unlink()
 
         # 직렬 작업 필요한 것들 하나의 함수로 wrapping

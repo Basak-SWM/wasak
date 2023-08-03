@@ -70,6 +70,14 @@ class DatabaseClient:
 
         return vo
 
+    def update(self, vo: T) -> T:
+        session = self.get_session()
+        session.merge(vo)
+        session.commit()
+        session.close()
+
+        return vo
+
 
 class SpeechDatabaseClient(DatabaseClient):
     def __init__(self) -> None:

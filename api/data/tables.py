@@ -29,6 +29,7 @@ class Speech(FullDateMixin, Base):
     __tablename__ = "speech"
     id = Column(Integer, primary_key=True)
     presentation_id = Column(Integer, ForeignKey("presentation.id"), nullable=False)
+    full_audios3url = Column(String, nullable=True)
 
 
 class AudioSegment(CreatedDateMixin, Base):
