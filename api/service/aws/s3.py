@@ -12,7 +12,7 @@ def get_analysis_result_save_url(
     speech_id: int,
     analysis_type: AnalysisRecordType,
 ):
-    return f"{presentation_id}/{speech_id}/analysis/{analysis_type}.json"
+    return f"{presentation_id}/{speech_id}/analysis/{analysis_type.value}.json"
 
 
 class S3Service:
