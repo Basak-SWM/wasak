@@ -2,7 +2,9 @@ from functools import reduce
 from typing import Any, List, Tuple
 from copy import deepcopy
 
-import kss
+from kiwipiepy import Kiwi
+
+kiwi = Kiwi()
 
 
 class AlignedSttElement:
@@ -11,7 +13,7 @@ class AlignedSttElement:
         self.text = text[:]
         # List[(int, int, str)] 형태로 구성된 단어들 (각각 시작 millisecond, 끝 millisecond, 단어)
         self.words = []
-        # 해당 문장이 STT 결과와 KSS 결과가 달라 깨져 있는지 여부
+        # 해당 문장이 STT 결과와 문장 분리 결과가 달라 깨져 있는지 여부
         self.broken = False
 
     def deserialize(self):
@@ -22,7 +24,7 @@ class AlignedSttElement:
 
 
 class SpeechService:
-    def get_kss_aligned_script(self, stt_script: dict) -> Any:
+    def get_aligned_script(self, stt_script: dict) -> Any:
         segments = stt_script["segments"]
 
         concatenated_text = " ".join(map(lambda s: s["text"], segments))
@@ -30,10 +32,10 @@ class SpeechService:
             reduce(lambda acc, cur: acc + cur["words"], segments, [])
         )
 
-        kss_splitted_sentences = kss.split_sentences(concatenated_text)
+        splitted_sentences = self._get_splitted_sentences(concatenated_text)
 
-        aligned_segments = self._get_kss_aligned_segments(
-            concatenated_words, kss_splitted_sentences
+        aligned_segments = self._get_aligned_segments(
+            concatenated_words, splitted_sentences
         )
 
         ret = deepcopy(stt_script)
@@ -41,7 +43,10 @@ class SpeechService:
 
         return ret
 
-    def _get_kss_aligned_segments(
+    def _get_splitted_sentences(self, text: str) -> List[str]:
+        return list(map(lambda x: x.text, kiwi.split_into_sents(text)))
+
+    def _get_aligned_segments(
         self, words: Tuple[int, int, str], splitted_sentences: List[str]
     ) -> List[dict]:
         # 처리할 단어의 인덱스 (Queue의 역할을 수행하며, 증가하기만 한다.)
@@ -51,7 +56,7 @@ class SpeechService:
         splitted_sentences = list(map(str.strip, splitted_sentences))
 
         # 스피치를 구성하는 단어를 앞에서부터 하나씩 빼서 문장을 재구성한다.
-        # 이때 KSS와 STT 결과가 서로 단어를 다른 단위로 인식한다면(예: KSS는 '안녕하세요'를 하나의 단어로 인식하고, STT는 '안녕'과 '하세요'로 인식한다면)
+        # 이때 kiwi와 STT 결과가 서로 단어를 다른 단위로 인식한다면(예: kiwi는 '안녕하세요'를 하나의 단어로 인식하고, STT는 '안녕'과 '하세요'로 인식한다면)
         # STT의 결과를 우선적으로 사용한다.
 
         # 재조합된 문장들을 담을 리스트 (element는 아래 `current`를 참고)
@@ -67,7 +72,7 @@ class SpeechService:
             # 원본 문자열을 수정하지 않도록 하기 위해 사용
             processing_sentence = sentence[:]
 
-            # 해당 문장이 STT 결과와 KSS 결과가 달라 깨져 있는지 여부
+            # 해당 문장이 STT 결과와 kiwi 결과가 달라 깨져 있는지 여부
             broken = False
 
             # 종료 조건: 문장이 빈 문자열이 되면 종료
@@ -87,7 +92,7 @@ class SpeechService:
                     processing_sentence = processing_sentence[len(word) :]
                     # 다음 단어를 처리하기 위해 인덱스를 증가시킴
                     c_idx += 1
-                # 처리해야 할 문자가 남았으나 word로 시작되지 않는 경우, STT 결과와 KSS 결과가 다른 깨진 문장임
+                # 처리해야 할 문자가 남았으나 word로 시작되지 않는 경우, STT 결과와 kiwi 결과가 다른 깨진 문장임
                 else:
                     # 깨져 있는 문장의 앞 부분을 삭제하고 (`안녕` + `하세요` 중 `안녕`만 현 문장에 포함된 것이므로, `안녕`을 뒤의 문장으로 붙여주는 것)
                     current["text"] = current["text"][: -len(word)]
