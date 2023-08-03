@@ -19,8 +19,8 @@ jobs:
           script_stop: true
           script: |
             set +e
-            sudo kill -9 $(sudo lsof -t -i:8000)
-            rm -rf ~/app/wasak
+            sudo kill -9 $(sudo lsof -t -i:8000) || true
+            rm -rf ~/app/wasak || true
             git clone git@github.com:Basak-SWM/wasak.git ~/app/wasak
             cat ~/app/.secrets/wasak/.env > ~/app/wasak/.env
             source ~/app/venvs/wasak/bin/activate
