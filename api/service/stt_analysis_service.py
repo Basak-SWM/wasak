@@ -69,7 +69,7 @@ def get_ptl_by_sentense(stt_json: str):
     return ptl_by_sentense
 
 
-def get_average_ptl_percent(stt_json: dict):
+def get_ptl_percent(stt_json: dict):
     """
     _summary_
         ptl (pause time length) 계산 함수
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         concatenated_script = json.loads(f.read())
 
     ptl_by_sentence = get_ptl_by_sentense(concatenated_script)
-    ptl_avg = get_average_ptl_percent(concatenated_script)
+    ptl_avg = get_ptl_percent(concatenated_script)
 
     lpm_by_sentence = get_lpm_by_sentense(concatenated_script)
     lpm_avg = get_average_lpm(concatenated_script)
