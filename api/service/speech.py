@@ -3,6 +3,9 @@ from typing import Any, List, Tuple
 from copy import deepcopy
 
 from kiwipiepy import Kiwi
+from api.data.client import SpeechDatabaseClient
+
+from api.data.tables import Speech
 
 kiwi = Kiwi()
 
@@ -24,6 +27,9 @@ class AlignedSttElement:
 
 
 class SpeechService:
+    def __init__(self) -> None:
+        self.db_client = SpeechDatabaseClient()
+
     def get_aligned_script(self, stt_script: dict) -> Any:
         segments = stt_script["segments"]
 
@@ -110,3 +116,7 @@ class SpeechService:
             reconstructed_segments.append(current)
 
         return reconstructed_segments
+
+    def update_full_audio_s3_url(self, speech: Speech, s3_url: str) -> None:
+        speech.full_audios3url = s3_url
+        self.db_client.update(speech)
