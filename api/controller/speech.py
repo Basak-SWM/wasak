@@ -234,8 +234,8 @@ def analysis_2_async_service(dto: Analysis2Dto):
     stt_key = dto.get_stt_key()
     stt_script = s3_service.download_json_object(stt_key)
 
-    # 2. STT 결과를 KSS를 이용하여 문장 별로 분할하여 재조합한다.
-    concatenated_script = speech_service.get_kss_aligned_script(stt_script)
+    # 2. STT 결과를 kiwi를 이용하여 문장 별로 분할하여 재조합한다.
+    concatenated_script = speech_service.get_aligned_script(stt_script)
     s3_service.upload_json_object(stt_key, concatenated_script)
 
     # 3-1. 휴지 분석 수행
