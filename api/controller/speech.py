@@ -261,7 +261,7 @@ def analysis_2_async_service(dto: Analysis2Dto):
     # 3-3. Average 휴지 (PTL) 분석 수행
     s3_service.upload_json_object(
         get_analysis_result_save_url(
-            dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_AVG
+            dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_RATIO
         ),
         get_ptl_ratio(concatenated_script),
     )
