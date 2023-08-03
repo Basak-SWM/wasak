@@ -26,7 +26,7 @@ from api.service.audio_analysis_service import (
 from api.service.stt_analysis_service import (
     get_average_lpm,
     get_lpm_by_sentense,
-    get_ptl_percent,
+    get_ptl_ratio,
     get_ptl_by_sentense,
 )
 
@@ -261,7 +261,7 @@ def analysis_2_async_service(dto: Analysis2Dto):
         get_analysis_result_save_url(
             dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_AVG
         ),
-        get_ptl_percent(concatenated_script),
+        get_ptl_ratio(concatenated_script),
     )
     print("[LOG] 3-3. Average 휴지 (PTL) 분석 수행 완료")
 
