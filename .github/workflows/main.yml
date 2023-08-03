@@ -1,4 +1,4 @@
-name: Deploy to EC2 as Docker
+name: Deploy to EC2 staging server
 
 on:
   push:
@@ -26,4 +26,4 @@ jobs:
             source ~/app/venvs/wasak/bin/activate
             pip3 install -r ~/app/wasak/requirements.txt
             cd ~/app/wasak
-            nohup uvicorn main:app --port 8000 &
+            nohup uvicorn main:app --port 8000 > uvicorn.log 2>&1 &
