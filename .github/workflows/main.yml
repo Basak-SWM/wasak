@@ -26,4 +26,4 @@ jobs:
             source ~/app/venvs/wasak/bin/activate
             pip3 install -r ~/app/wasak/requirements.txt
             cd ~/app/wasak
-            uvicorn main:app --port 8000 &
+            nohup uvicorn main:app --port 8000 &
