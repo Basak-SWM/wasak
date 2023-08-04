@@ -1,6 +1,7 @@
 import ffmpeg
 from pathlib import Path
 from typing import List
+
 from api.service.cache_service import get_cache_file_path
 
 """
@@ -8,7 +9,7 @@ from api.service.cache_service import get_cache_file_path
 """
 
 
-def merge_webm_files_to_wav(webm_files_path_list: List[str]) -> str:
+def merge_webm_files_to_wav_ffmpeg(webm_files_path_list: List[str]) -> str:
     """_summary_
     여러 webm 파일을 하나의 wav 파일로 병합한다.
 
@@ -58,6 +59,27 @@ def merge_webm_files_to_wav(webm_files_path_list: List[str]) -> str:
     return output_wav_path
 
 
+def merge_webm_files_to_wav_binary_concat(webm_files_path_list: List[str]) -> Path:
+    """
+    _summary_
+    단순 binary concat 방식으로 webm 파일들을 하나의 webm 파일로 병합한다.
+
+    Args:
+        webm_files_path_list (Path): webm 파일 경로
+
+    Returns:
+        Path: 병합된 webm 파일 경로
+
+    """
+    merged_webm_path = get_cache_file_path("webm")
+    with open(merged_webm_path, "wb") as f:
+        for webm_file_path in webm_files_path_list:
+            with open(webm_file_path, "rb") as f2:
+                f.write(f2.read())
+
+    return merged_webm_path
+
+
 def wav_to_mp3(wav_file_path: Path) -> Path:
     """_summary_
     wav 파일을 mp3 파일로 변환한다.
@@ -78,3 +100,17 @@ def wav_to_mp3(wav_file_path: Path) -> Path:
     )
 
     return output_mp3_path
+
+
+if __name__ == "__main__":
+    print(
+        merge_webm_files_to_wav_binary_concat(
+            [
+                '/Users/cyh/Downloads/debug_audio/1691069794891_bb36af31-c176-4c1d-9d66-444a4ef58092.webm',
+                '/Users/cyh/Downloads/debug_audio/1691069797883_7f61c544-6913-4bf2-b16c-58d9d3ce8846.webm',
+                '/Users/cyh/Downloads/debug_audio/1691069800894_1c0e2297-053a-4d98-b312-27c902d48ed5.webm',
+                '/Users/cyh/Downloads/debug_audio/1691069803955_1052d7c2-ca57-4c42-81ae-6414e4422aae.webm',
+                '/Users/cyh/Downloads/debug_audio/1691069805056_3642c3be-7e78-4029-a977-a9aa2a629853.webm'
+            ]
+        )
+    )
