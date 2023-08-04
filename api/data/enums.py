@@ -9,3 +9,11 @@ class AnalysisRecordType(enum.Enum):
     LPM_AVG = "LPM_AVG"
     PAUSE = "PAUSE"
     PAUSE_RATIO = "PAUSE_RATIO"
+    SPEECH_CORRECTION = "SPEECH_CORRECTION"
+
+
+class SpeechCorrectionType(enum.Enum):
+    TOO_FAST = "TOO_FAST"
+    TOO_SLOW = "TOO_SLOW"
+    PAUSE_TOO_LONG = "PAUSE_TOO_LONG"
+    PAUSE_TOO_SHORT = "PAUSE_TOO_SHORT"
