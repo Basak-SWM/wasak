@@ -47,7 +47,7 @@ def get_lpm_by_sentence(stt_json: str) -> List[Tuple[int, int, str]]:
     return lpm_by_sentence
 
 
-def get_ptl_by_sentence(stt_json: str):
+def get_ptl_by_sentence(stt_json: dict):
     """
     _summary_
         마침표 등의 기호로 문장의 끝을 판단하고 이후 이어지는 문장까지
@@ -59,10 +59,9 @@ def get_ptl_by_sentence(stt_json: str):
     Returns:
     List[tuple[int, int]]]:
         (각 문장의 끝나는 시간, 이어지는 문장 직전까지의 휴지 기간 (ms)),
-
     """
     ptl_by_sentence = [
-        (sentence["end"], stt_json["segments"][idx + 1]["start"] - sentence["end"])
+        stt_json["segments"][idx + 1]["start"] - sentence["end"]
         for idx, sentence in enumerate(stt_json["segments"])
         if idx + 1 != len(stt_json["segments"])
     ]
