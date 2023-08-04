@@ -24,6 +24,7 @@ from api.service.audio_analysis_service import (
     get_db_analysis,
     get_f0_analysis,
 )
+from api.service.speech_correction_symbol_service import get_speech_correction
 from api.service.stt_analysis_service import (
     get_average_lpm,
     get_lpm_by_sentence,
@@ -146,7 +147,7 @@ def trigger_analysis_1(
     presentation_id: int,
     speech_id: int,
     dto: Analysis1Dto,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
 ):
     background_tasks.add_task(analysis1_async_wrapper, presentation_id, speech_id, dto)
     return "success"
@@ -169,34 +170,46 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
         presentation_id, speech_id, AnalysisRecordType.STT, concatenated_script
     )
 
-    # 3-1. 휴지 분석 수행
-    result = get_ptl_by_sentence(concatenated_script)
+    # 3-1. 문장 간 휴지 분석 수행
+    ptl_result = get_ptl_by_sentence(concatenated_script)
     analysis_record_service.save_analysis_result(
-        presentation_id, speech_id, AnalysisRecordType.PAUSE, result
+        presentation_id, speech_id, AnalysisRecordType.PAUSE, ptl_result
     )
-    print("[LOG] 3-1. 휴지 분석 수행 완료")
+    print("[LOG] 3-1. 문장 간 휴지 분석 수행 완료")
 
     # 3-2. LPM 분석 수행
-    result = get_lpm_by_sentence(concatenated_script)
+    lpm_result = get_lpm_by_sentence(concatenated_script)
     analysis_record_service.save_analysis_result(
-        presentation_id, speech_id, AnalysisRecordType.LPM, result
+        presentation_id, speech_id, AnalysisRecordType.LPM, lpm_result
     )
     print("[LOG] 3-2. LPM 분석 수행 완료")
 
-    # 3-3. Average 휴지 (PTL) 분석 수행
-    result = get_ptl_ratio(concatenated_script)
+    # 3-3. 휴지 비율 분석 수행
+    ptl_ratio_result = get_ptl_ratio(concatenated_script)
     analysis_record_service.save_analysis_result(
-        presentation_id, speech_id, AnalysisRecordType.PAUSE_RATIO, result
+        presentation_id, speech_id, AnalysisRecordType.PAUSE_RATIO, ptl_ratio_result
     )
-    print("[LOG] 3-3. Average 휴지 (PTL) 분석 수행 완료")
+    print("[LOG] 3-3. 휴지 비율 분석 수행 완료")
 
     # 3-4. Average LPM 분석 수행
-    result = get_average_lpm(concatenated_script)
+    avg_lpm_result = get_average_lpm(concatenated_script)
     analysis_record_service.save_analysis_result(
-        presentation_id, speech_id, AnalysisRecordType.LPM_AVG, result
+        presentation_id, speech_id, AnalysisRecordType.LPM_AVG, avg_lpm_result
     )
 
     print("[LOG] 3-4. Average LPM 분석 수행 완료")
+
+    # 4. 서버 교정 부호 생성
+    speech_correction_result = get_speech_correction(
+        lpm_result, ptl_result, concatenated_script
+    )
+    analysis_record_service.save_analysis_result(
+        presentation_id,
+        speech_id,
+        AnalysisRecordType.SPEECH_CORRECTION,
+        speech_correction_result,
+    )
+    print("[LOG] 4. 서버 교정 부호 생성 완료")
 
 
 @app.post("/{presentation_id}/speech/{speech_id}/analysis-2")
