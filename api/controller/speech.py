@@ -57,7 +57,7 @@ class Analysis1Dto(BaseModel):
     download_url: str
 
 
-def analysis1_async_wrapper(speech_id: int, dto: Analysis1Dto):
+def analysis1_async_wrapper(presentation_id: int, speech_id: int, dto: Analysis1Dto):
     """
     ## STT 결과가 필요 없는 음성 분석 수행
     1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
@@ -81,7 +81,11 @@ def analysis1_async_wrapper(speech_id: int, dto: Analysis1Dto):
 
         # 1. DB에서 speech_id에 물려있는 audio_segments의 S3 경로들을 가져온다.
         target_speech: Speech = get_object_or_404(
-            speech_db_client, [Speech.id.bool_op("=")(speech_id)]
+            speech_db_client,
+            [
+                Speech.presentation_id.bool_op("=")(presentation_id),
+                Speech.id.bool_op("=")(speech_id),
+            ],
         )
 
         audio_segments: List[
@@ -130,21 +134,16 @@ def analysis1_async_wrapper(speech_id: int, dto: Analysis1Dto):
 
 @app.post("/{speech_id}/analysis-1")
 def trigger_analysis_1(
-    speech_id: int, dto: Analysis1Dto, background_tasks: BackgroundTasks
+    presentation_id: int,
+    speech_id: int,
+    dto: Analysis1Dto,
+    background_tasks: BackgroundTasks,
 ):
-    background_tasks.add_task(analysis1_async_wrapper, speech_id, dto)
+    background_tasks.add_task(analysis1_async_wrapper, presentation_id, speech_id, dto)
     return "success"
 
 
-class Analysis2Dto(BaseModel):
-    speech_id: int
-    presentation_id: int
-
-    def get_stt_key(self):
-        return f"{self.presentation_id}/{self.speech_id}/analysis/STT.json"
-
-
-def analysis2_async_wrapper(dto: Analysis2Dto):
+def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     """
     ## STT 결과가 필요한 음성 분석 수행
     1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
@@ -152,40 +151,40 @@ def analysis2_async_wrapper(dto: Analysis2Dto):
     2-2. LPM 분석 수행
     """
     # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
-    stt_key = dto.get_stt_key()
+    stt_key = f"{presentation_id}/{speech_id}/analysis/STT.json"
     stt_script = s3_service.download_json_object(stt_key)
 
     # 2. STT 결과를 kiwi를 이용하여 문장 별로 분할하여 재조합한다.
     concatenated_script = speech_service.get_aligned_script(stt_script)
     analysis_record_service.save_analysis_result(
-        dto.presentation_id, dto.speech_id, AnalysisRecordType.STT, concatenated_script
+        presentation_id, speech_id, AnalysisRecordType.STT, concatenated_script
     )
 
     # 3-1. 휴지 분석 수행
     result = get_ptl_by_sentence(concatenated_script)
     analysis_record_service.save_analysis_result(
-        dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE, result
+        presentation_id, speech_id, AnalysisRecordType.PAUSE, result
     )
     print("[LOG] 3-1. 휴지 분석 수행 완료")
 
     # 3-2. LPM 분석 수행
     result = get_lpm_by_sentence(concatenated_script)
     analysis_record_service.save_analysis_result(
-        dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM, result
+        presentation_id, speech_id, AnalysisRecordType.LPM, result
     )
     print("[LOG] 3-2. LPM 분석 수행 완료")
 
     # 3-3. Average 휴지 (PTL) 분석 수행
     result = get_ptl_ratio(concatenated_script)
     analysis_record_service.save_analysis_result(
-        dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_RATIO, result
+        presentation_id, speech_id, AnalysisRecordType.PAUSE_RATIO, result
     )
     print("[LOG] 3-3. Average 휴지 (PTL) 분석 수행 완료")
 
     # 3-4. Average LPM 분석 수행
     result = get_average_lpm(concatenated_script)
     analysis_record_service.save_analysis_result(
-        dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM_AVG, result
+        presentation_id, speech_id, AnalysisRecordType.LPM_AVG, result
     )
 
     print("[LOG] 3-4. Average LPM 분석 수행 완료")
@@ -193,7 +192,7 @@ def analysis2_async_wrapper(dto: Analysis2Dto):
 
 @app.post("/{speech_id}/analysis-2")
 def trigger_analysis_2(
-    speech_id: int, dto: Analysis2Dto, background_tasks: BackgroundTasks
+    presentation_id: int, speech_id: int, background_tasks: BackgroundTasks
 ):
-    background_tasks.add_task(analysis2_async_wrapper, dto)
+    background_tasks.add_task(analysis2_async_wrapper, presentation_id, speech_id)
     return "success"
