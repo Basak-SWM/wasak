@@ -21,7 +21,9 @@ class AnalysisRecordService:
         result: Any,
     ) -> None:
         result_key = f"{presentation_id}/{speech_id}/analysis/{record_type.value}.json"
-        url = self.s3_service.upload_json_object(result_key, json.dumps(result))
+        url = self.s3_service.upload_json_object(
+            result_key, json.dumps(result, ensure_ascii=False)
+        )
 
         vo = AnalysisRecord()
         vo.speech_id = speech_id
