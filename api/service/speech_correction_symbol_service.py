@@ -44,7 +44,10 @@ def get_speech_correction(
     word_index = 0
     for s_idx, segment in enumerate(concatenated_script["segments"]):
         for w_idx in range(len(segment["words"])):
-            concatenated_script["segments"][s_idx]["words"][w_idx].append(word_index)
+            concatenated_script["segments"][s_idx]["words"][w_idx] = (
+                *concatenated_script["segments"][s_idx]["words"][w_idx],
+                word_index,
+            )
             word_index += 1
 
     # PTL 분석의 경우 마지막 문장 뒤에는 휴지가 없기 때문에 zip_longest를 사용한다.
