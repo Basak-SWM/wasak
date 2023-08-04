@@ -63,10 +63,8 @@ def analysis1_async_wrapper(presentation_id: int, speech_id: int, dto: Analysis1
     2. S3에서 해당 경로들의 파일들을 다운로드한다.
     3. 해당 파일들을 wav로 합친다.
     4-1. Clova에 STT Request를 보낸다. (용량 최적화를 위해 추후 mp3로 보내야 할 수도 있음.)
-    4-2. wav파일로 dB Analysis
-        4-2-1. 결과 DB 저장
-    4-3. wav파일로 f0 Analysis
-        4-3-1. 결과 DB 저장
+    4-2. wav파일로 f0 Analysis
+    4-3. wav파일로 dB Analysis
     4-4. wav -> mp3 변환
         4-4-1. 변환된 mp3파일 S3 업로드
         4-4-2. 변환된 mp3파일 삭제
@@ -115,6 +113,18 @@ def analysis1_async_wrapper(presentation_id: int, speech_id: int, dto: Analysis1
         speech_service.update_full_audio_s3_url(target_speech, full_audio_path)
         mp3_path.unlink()
 
+        # 4-2. wav파일로 f0(Hz) Analysis
+        result = get_f0_analysis(target_wav_file_path)
+        analysis_record_service.save_analysis_result(
+            presentation_id, speech_id, AnalysisRecordType.HERTZ, result
+        )
+
+        # 4-3. wav파일로 dB Analysis
+        result = get_db_analysis(target_wav_file_path)
+        analysis_record_service.save_analysis_result(
+            presentation_id, speech_id, AnalysisRecordType.DECIBEL, result
+        )
+
         success = clova_stt_send(dto.download_url, dto.callback_url)
         if not success:
             raise Exception("STT Failed")
@@ -136,7 +146,7 @@ def trigger_analysis_1(
     presentation_id: int,
     speech_id: int,
     dto: Analysis1Dto,
-    background_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks
 ):
     background_tasks.add_task(analysis1_async_wrapper, presentation_id, speech_id, dto)
     return "success"
