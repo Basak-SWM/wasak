@@ -25,9 +25,9 @@ from api.service.audio_analysis_service import (
 )
 from api.service.stt_analysis_service import (
     get_average_lpm,
-    get_lpm_by_sentense,
+    get_lpm_by_sentence,
     get_ptl_ratio,
-    get_ptl_by_sentense,
+    get_ptl_by_sentence,
 )
 
 app = FastAPI()
@@ -245,7 +245,7 @@ def analysis_2_async_service(dto: Analysis2Dto):
         get_analysis_result_save_url(
             dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE
         ),
-        get_ptl_by_sentense(concatenated_script),
+        get_ptl_by_sentence(concatenated_script),
     )
     print("[LOG] 3-1. 휴지 분석 수행 완료")
 
@@ -254,7 +254,7 @@ def analysis_2_async_service(dto: Analysis2Dto):
         get_analysis_result_save_url(
             dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM
         ),
-        get_lpm_by_sentense(concatenated_script),
+        get_lpm_by_sentence(concatenated_script),
     )
     print("[LOG] 3-2. LPM 분석 수행 완료")
 

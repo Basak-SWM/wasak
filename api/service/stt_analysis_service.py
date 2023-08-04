@@ -23,10 +23,10 @@ def get_average_lpm(stt_json: dict) -> int:
     return len(only_letters_text) / (stt_json["segments"][-1]["end"] / 1000 / 60)
 
 
-def get_lpm_by_sentense(stt_json: str) -> List[Tuple[int, int, str]]:
+def get_lpm_by_sentence(stt_json: str) -> List[Tuple[int, int, str]]:
     """
     _summary_
-        모든 segments 들을 순회하며 words 별로 걸린 시간 및 글자 수를 합산, '.'를 만나면 문장의 끝으로 판단하여 lpm_by_sentense를 계산한다.
+        모든 segments 들을 순회하며 words 별로 걸린 시간 및 글자 수를 합산, '.'를 만나면 문장의 끝으로 판단하여 lpm_by_sentence를 계산한다.
 
     Args:
         stt_json (dict): Clova에서 받은 STT 결과를 reconstruct한 json
@@ -36,7 +36,7 @@ def get_lpm_by_sentense(stt_json: str) -> List[Tuple[int, int, str]]:
 
     """
 
-    lpm_by_sentense = [
+    lpm_by_sentence = [
         len(s["text"].replace(" ", "").replace(".", ""))
         / (s["end"] - s["start"])
         * 1000
@@ -44,10 +44,10 @@ def get_lpm_by_sentense(stt_json: str) -> List[Tuple[int, int, str]]:
         for s in stt_json["segments"]
     ]
 
-    return lpm_by_sentense
+    return lpm_by_sentence
 
 
-def get_ptl_by_sentense(stt_json: str):
+def get_ptl_by_sentence(stt_json: str):
     """
     _summary_
         마침표 등의 기호로 문장의 끝을 판단하고 이후 이어지는 문장까지
@@ -61,12 +61,12 @@ def get_ptl_by_sentense(stt_json: str):
         (각 문장의 끝나는 시간, 이어지는 문장 직전까지의 휴지 기간 (ms)),
 
     """
-    ptl_by_sentense = [
+    ptl_by_sentence = [
         (sentence["end"], stt_json["segments"][idx + 1]["start"] - sentence["end"])
         for idx, sentence in enumerate(stt_json["segments"])
         if idx + 1 != len(stt_json["segments"])
     ]
-    return ptl_by_sentense
+    return ptl_by_sentence
 
 
 def get_ptl_ratio(stt_json: dict):
@@ -110,10 +110,10 @@ if __name__ == "__main__":
     ) as f:
         concatenated_script = json.loads(f.read())
 
-    ptl_by_sentence = get_ptl_by_sentense(concatenated_script)
+    ptl_by_sentence = get_ptl_by_sentence(concatenated_script)
     ptl_avg = get_ptl_ratio(concatenated_script)
 
-    lpm_by_sentence = get_lpm_by_sentense(concatenated_script)
+    lpm_by_sentence = get_lpm_by_sentence(concatenated_script)
     lpm_avg = get_average_lpm(concatenated_script)
 
     temp = [ptl_by_sentence, ptl_avg, lpm_by_sentence, lpm_avg]
