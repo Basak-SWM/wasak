@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 
 from api.configs import db
-from api.data.tables import AudioSegment, Speech
+from api.data.tables import AnalysisRecord, AudioSegment, Speech
 
 
 T = TypeVar("T")
@@ -92,3 +92,8 @@ class AudioSegmentDatabaseClient(DatabaseClient):
         return super().conditional_select_all(
             [AudioSegment.speech_id.bool_op("=")(speech.id)]
         )
+
+
+class AnalysisRecordDatabaseClient(DatabaseClient):
+    def __init__(self) -> None:
+        super().__init__(AnalysisRecord)

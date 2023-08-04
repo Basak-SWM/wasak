@@ -2,12 +2,15 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
     Column,
     DateTime,
+    Enum,
     Integer,
     String,
     ForeignKey,
     BigInteger,
     func,
 )
+
+from api.data.enums import AnalysisRecordType
 
 Base = declarative_base()
 
@@ -49,3 +52,11 @@ class AudioSegment(CreatedDateMixin, Base):
 
     def get_full_path(self) -> str:
         return self.url.split(".com/")[-1]
+
+
+class AnalysisRecord(CreatedDateMixin, Base):
+    __tablename__ = "analysis_record"
+    id = Column(Integer, primary_key=True)
+    record_type = Column(Enum(AnalysisRecordType), name="type", nullable=False)
+    speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
+    url = Column(String, name="url", nullable=False)
