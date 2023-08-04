@@ -1,6 +1,4 @@
-import os
 from pathlib import Path
-from time import sleep
 from typing import List
 import tempfile
 
@@ -15,7 +13,7 @@ from api.data.enums import AnalysisRecordType
 
 from api.service.analysis_record import AnalysisRecordService
 
-from api.service.aws.s3 import S3Service, get_analysis_result_save_url
+from api.service.aws.s3 import S3Service
 from api.service.speech import SpeechService
 from api.service.ffmpeg_service import (
     merge_webm_files_binary_concat,
@@ -109,7 +107,7 @@ def analysis1_async_wrapper(speech_id: int, dto: Analysis1Dto):
 
         # 4. 병합된 wav 파일을 mp3로 변환하여 S3에 업로드한다.
         mp3_path = wav_to_mp3(target_wav_file_path)
-        s3_service.upload_object(mp3_path, dto.upload_key)
+        url = s3_service.upload_object(mp3_path, dto.upload_key)
         full_audio_path = dto.download_url.split("?")[0]
         speech_service.update_full_audio_s3_url(target_speech, full_audio_path)
         mp3_path.unlink()
@@ -159,42 +157,37 @@ def analysis2_async_wrapper(dto: Analysis2Dto):
 
     # 2. STT 결과를 kiwi를 이용하여 문장 별로 분할하여 재조합한다.
     concatenated_script = speech_service.get_aligned_script(stt_script)
-    s3_service.upload_json_object(stt_key, concatenated_script)
+    analysis_record_service.save_analysis_result(
+        dto.presentation_id, dto.speech_id, AnalysisRecordType.STT, concatenated_script
+    )
 
     # 3-1. 휴지 분석 수행
-    s3_service.upload_json_object(
-        get_analysis_result_save_url(
-            dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE
-        ),
-        get_ptl_by_sentence(concatenated_script),
+    result = get_ptl_by_sentence(concatenated_script)
+    analysis_record_service.save_analysis_result(
+        dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE, result
     )
     print("[LOG] 3-1. 휴지 분석 수행 완료")
 
     # 3-2. LPM 분석 수행
-    s3_service.upload_json_object(
-        get_analysis_result_save_url(
-            dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM
-        ),
-        get_lpm_by_sentence(concatenated_script),
+    result = get_lpm_by_sentence(concatenated_script)
+    analysis_record_service.save_analysis_result(
+        dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM, result
     )
     print("[LOG] 3-2. LPM 분석 수행 완료")
 
     # 3-3. Average 휴지 (PTL) 분석 수행
-    s3_service.upload_json_object(
-        get_analysis_result_save_url(
-            dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_RATIO
-        ),
-        get_ptl_ratio(concatenated_script),
+    result = get_ptl_ratio(concatenated_script)
+    analysis_record_service.save_analysis_result(
+        dto.presentation_id, dto.speech_id, AnalysisRecordType.PAUSE_RATIO, result
     )
     print("[LOG] 3-3. Average 휴지 (PTL) 분석 수행 완료")
 
     # 3-4. Average LPM 분석 수행
-    s3_service.upload_json_object(
-        get_analysis_result_save_url(
-            dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM_AVG
-        ),
-        get_average_lpm(concatenated_script),
+    result = get_average_lpm(concatenated_script)
+    analysis_record_service.save_analysis_result(
+        dto.presentation_id, dto.speech_id, AnalysisRecordType.LPM_AVG, result
     )
+
     print("[LOG] 3-4. Average LPM 분석 수행 완료")
 
 
