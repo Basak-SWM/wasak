@@ -4,7 +4,6 @@ import tempfile
 
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
-import concurrent.futures
 
 from api.data.client import SpeechDatabaseClient, AudioSegmentDatabaseClient
 from api.data.shortcuts import get_object_or_404
@@ -132,7 +131,7 @@ def analysis1_async_wrapper(presentation_id: int, speech_id: int, dto: Analysis1
         tmp_dir_context.cleanup()
 
 
-@app.post("/{speech_id}/analysis-1")
+@app.post("/{presentation_id}/speech/{speech_id}/analysis-1")
 def trigger_analysis_1(
     presentation_id: int,
     speech_id: int,
@@ -190,7 +189,7 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     print("[LOG] 3-4. Average LPM 분석 수행 완료")
 
 
-@app.post("/{speech_id}/analysis-2")
+@app.post("/{presentation_id}/speech/{speech_id}/analysis-2")
 def trigger_analysis_2(
     presentation_id: int, speech_id: int, background_tasks: BackgroundTasks
 ):

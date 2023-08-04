@@ -4,6 +4,7 @@ import json
 from api.data.client import AnalysisRecordDatabaseClient
 
 from api.data.enums import AnalysisRecordType
+from api.data.tables import AnalysisRecord
 from api.service.aws.s3 import S3Service
 
 
@@ -20,10 +21,12 @@ class AnalysisRecordService:
         result: Any,
     ) -> None:
         result_key = f"{presentation_id}/{speech_id}/analysis/{record_type.value}.json"
-        self.s3_service.upload_json_object(result_key, json.dumps(result))
-        self.db_client.create(
-            record_type=record_type.value,
-            speech_id=speech_id,
-            url=self.s3_service.get_presigned_url(result_key),
-            created_date=datetime.datetime.now(),
-        )
+        url = self.s3_service.upload_json_object(result_key, json.dumps(result))
+
+        vo = AnalysisRecord()
+        vo.speech_id = speech_id
+        vo.url = url
+        vo.record_type = record_type
+        vo.created_date = datetime.datetime.now()
+
+        self.db_client.insert(vo)
