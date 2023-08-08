@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import List
 import tempfile
@@ -162,7 +163,7 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     """
     # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
     stt_key = f"{presentation_id}/{speech_id}/analysis/STT.json"
-    stt_script = s3_service.download_json_object(stt_key)
+    stt_script = json.loads(s3_service.download_json_object(stt_key))
 
     # 2. STT 결과를 kiwi를 이용하여 문장 별로 분할하여 재조합한다.
     concatenated_script = speech_service.get_aligned_script(stt_script)
