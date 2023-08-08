@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import Any, List, Tuple
+from typing import Any, List, Literal, Tuple, Union
 from copy import deepcopy
 
 from kiwipiepy import Kiwi
@@ -119,4 +119,21 @@ class SpeechService:
 
     def update_full_audio_s3_url(self, speech: Speech, s3_url: str) -> None:
         speech.full_audios3url = s3_url
+        self.db_client.update(speech)
+
+    def update_analysis_info(
+        self,
+        speech: Speech,
+        analysis_type: Literal["avgf0", "avglpm", "feedback_count", "pause_ratio"],
+        data: Union[float, int],
+    ) -> None:
+        if analysis_type == "avgf0":
+            speech.avgf0 = data
+        elif analysis_type == "avglpm":
+            speech.avglpm = data
+        elif analysis_type == "feedback_count":
+            speech.feedback_count = data
+        elif analysis_type == "pause_ratio":
+            speech.pause_ratio = data
+
         self.db_client.update(speech)

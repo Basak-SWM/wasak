@@ -100,7 +100,7 @@ def get_ptl_ratio(stt_json: dict):
                 paused_time += paused_time_candidate
 
     if not stt_json["segments"]:
-        return False
+        return 100.0
     else:
         return paused_time / stt_json["segments"][-1]["end"] * 100
 
