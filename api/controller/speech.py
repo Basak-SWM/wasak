@@ -131,6 +131,9 @@ def analysis1_async_wrapper(presentation_id: int, speech_id: int, dto: Analysis1
         # 4-4. wav파일로 f0(Hz) average analysis
         f0_average_result = get_f0_average_analysis(target_wav_file_path)
         speech_service.update_analysis_info(target_speech, "avgf0", f0_average_result)
+        analysis_record_service.save_analysis_result(
+            presentation_id, speech_id, AnalysisRecordType.HERTZ_AVG, f0_average_result
+        )
 
         clova_result = clova_stt_send(dto.download_url, dto.callback_url)
         if not clova_result:
