@@ -66,7 +66,7 @@ def get_f0_analysis(audio_file_path: Path):
     return {"times": times.tolist(), "f0_smoothed": f0_smoothed.tolist()}
 
 
-def get_f0_average(audio_file_path: Path) -> str:
+def get_f0_average_analysis(audio_file_path: Path) -> float:
     """
     _summary_
         단일 스피치의 평균 f0을 반환.
@@ -75,7 +75,7 @@ def get_f0_average(audio_file_path: Path) -> str:
         audio_file_path (Path): 분석할 음성 파일 경로
 
     Returns:
-        str: 평균 f0 값 반환 / ex) 남자 목소리: 120, 여자 목소리: 220
+        float: 평균 f0 값 반환 / ex) 남자 목소리: 120, 여자 목소리: 220
     """
     audio_data, sample_rate = librosa.load(audio_file_path)
 
@@ -88,7 +88,7 @@ def get_f0_average(audio_file_path: Path) -> str:
     # Calculate and print the average f0
     average_f0 = np.nanmean(f0_voiced)
 
-    return average_f0
+    return float(average_f0)
 
 
 def get_db_analysis(audio_file_path: Path):

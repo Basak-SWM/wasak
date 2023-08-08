@@ -21,4 +21,6 @@ def clova_stt_send(s3_audio_file_path: str, response_callback_url: str):
     if response.status_code == 200:
         return True
     else:
+        # TODO: Error logging
+        print("[DEV] Clova STT Send Failed: ", response.status_code, response.text)
         return False

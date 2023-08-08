@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import List
 import tempfile
+from functools import reduce
 
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
@@ -24,6 +25,7 @@ from api.service.clova_service import clova_stt_send
 from api.service.audio_analysis_service import (
     get_db_analysis,
     get_f0_analysis,
+    get_f0_average_analysis,
 )
 from api.service.speech_correction_symbol_service import get_speech_correction
 from api.service.stt_analysis_service import (
@@ -127,9 +129,13 @@ def analysis1_async_wrapper(presentation_id: int, speech_id: int, dto: Analysis1
             presentation_id, speech_id, AnalysisRecordType.DECIBEL, result
         )
 
-        success = clova_stt_send(dto.download_url, dto.callback_url)
-        if not success:
-            raise Exception("STT Failed")
+        # 4-4. wav파일로 f0(Hz) average analysis
+        f0_average_result = get_f0_average_analysis(target_wav_file_path)
+        speech_service.update_analysis_info(target_speech, "avgf0", f0_average_result)
+
+        clova_result = clova_stt_send(dto.download_url, dto.callback_url)
+        if not clova_result:
+            raise Exception("STT Failed", clova_result)
 
         # 5. 모든 작업 후 wav 파일 삭제
         target_wav_file_path.unlink()
@@ -161,6 +167,15 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     2-1. 휴지 분석 수행
     2-2. LPM 분석 수행
     """
+    # 0. DB에 정보 저장 위해서 speech entity 불러옴
+    target_speech: Speech = get_object_or_404(
+        speech_db_client,
+        [
+            Speech.presentation_id.bool_op("=")(presentation_id),
+            Speech.id.bool_op("=")(speech_id),
+        ],
+    )
+
     # 1. S3에서 p.id / s.id로 STT 결과 json을 받아온다.
     stt_key = f"{presentation_id}/{speech_id}/analysis/STT.json"
     stt_script = json.loads(s3_service.download_json_object(stt_key))
@@ -190,6 +205,7 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     analysis_record_service.save_analysis_result(
         presentation_id, speech_id, AnalysisRecordType.PAUSE_RATIO, ptl_ratio_result
     )
+    speech_service.update_analysis_info(target_speech, "pause_ratio", ptl_ratio_result)
     print("[LOG] 3-3. 휴지 비율 분석 수행 완료")
 
     # 3-4. Average LPM 분석 수행
@@ -197,6 +213,7 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     analysis_record_service.save_analysis_result(
         presentation_id, speech_id, AnalysisRecordType.LPM_AVG, avg_lpm_result
     )
+    speech_service.update_analysis_info(target_speech, "avglpm", avg_lpm_result)
 
     print("[LOG] 3-4. Average LPM 분석 수행 완료")
 
@@ -209,6 +226,11 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
         speech_id,
         AnalysisRecordType.SPEECH_CORRECTION,
         speech_correction_result,
+    )
+    speech_service.update_analysis_info(
+        target_speech,
+        "feedback_count",
+        reduce(lambda acc, cur: acc + len(cur), speech_correction_result.values(), 0),
     )
     print("[LOG] 4. 서버 교정 부호 생성 완료")
 

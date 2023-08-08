@@ -3,6 +3,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     Enum,
+    Float,
     Integer,
     String,
     ForeignKey,
@@ -33,6 +34,10 @@ class Speech(FullDateMixin, Base):
     id = Column(Integer, primary_key=True)
     presentation_id = Column(Integer, ForeignKey("presentation.id"), nullable=False)
     full_audios3url = Column(String, nullable=True)
+    avgf0 = Column(Float, nullable=True)
+    avglpm = Column(Float, nullable=True)
+    feedback_count = Column(Integer, nullable=True)
+    pause_ratio = Column(Float, nullable=True)
 
 
 class AudioSegment(CreatedDateMixin, Base):
