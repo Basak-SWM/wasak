@@ -20,6 +20,8 @@ def get_average_lpm(stt_json: dict) -> int:
     # 느림: 300음절 / min
     # 보통: 350음절 / min
     # 빠름: 400음절 / min
+    if not stt_json["segments"]:
+        return 0.0
     return len(only_letters_text) / (stt_json["segments"][-1]["end"] / 1000 / 60)
 
 
