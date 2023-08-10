@@ -68,6 +68,9 @@ class DatabaseClient:
         session.commit()
         session.close()
 
+        print("self.table_class:", self.table_class)
+        print("Inserted vo id: ", vo.id)
+
         return vo
 
     def update(self, vo: T) -> T:
