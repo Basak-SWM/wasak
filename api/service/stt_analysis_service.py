@@ -58,6 +58,7 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
     Returns:
         List[int]: 단어별 속도를 -10 ~ +10으로 분석
     """
+    # FIXME: 앞 뒤로 공평하게 선택되도록 초반과 후반의 item들에게 중복 window 적용 필요
     WINDOW_SIZE = 10
 
     def get_lpm(start_time: int, end_time: int, letter_count: int):
