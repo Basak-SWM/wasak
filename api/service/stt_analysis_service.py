@@ -1,3 +1,4 @@
+from collections import Counter
 import json
 from typing import Tuple, List
 
@@ -80,6 +81,19 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
 
     word_speed = [0] * len(words)
 
+    # 앞에서 잘리는 부분 따로 window 선택해줌
+    for idx in range(WINDOW_SIZE - 1):
+        start_time = words[0][0]
+        end_time = words[idx + 1][1]
+        letter_count = sum([len(w[2]) for w in words[: idx + 1]])
+
+        lpm = get_lpm(start_time, end_time, letter_count)
+        if lpm > 400:
+            word_speed[: idx + 1] = [x + 1 for x in word_speed[: idx + 1]]
+        elif lpm < 300:
+            word_speed[: idx + 1] = [x - 1 for x in word_speed[: idx + 1]]
+
+    # 앞 뒤 제외 동일한 비중으로 선택되는 window 선택지
     for idx in range(len(words) - WINDOW_SIZE):
         start_time = words[idx][0]
         end_time = words[idx + WINDOW_SIZE - 1][1]
@@ -95,6 +109,18 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
                 x - 1 for x in word_speed[idx : idx + WINDOW_SIZE]
             ]
 
+    # 뒤에서 잘리는 부분 따로 window 선택해줌
+    for idx in range(len(words) - WINDOW_SIZE, len(words)):
+        start_time = words[idx][0]
+        end_time = words[-1][1]
+        letter_count = sum([len(w[2]) for w in words[idx:]])
+
+        lpm = get_lpm(start_time, end_time, letter_count)
+        if lpm > 400:
+            word_speed[idx:] = [x + 1 for x in word_speed[idx:]]
+        elif lpm < 300:
+            word_speed[idx:] = [x - 1 for x in word_speed[idx:]]
+    
     result = {"WINDOW_SIZE": WINDOW_SIZE, "speed_list": word_speed}
     return result
 
