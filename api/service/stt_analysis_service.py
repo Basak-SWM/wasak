@@ -60,7 +60,7 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
         List[int]: 단어별 속도를 -10 ~ +10으로 분석
     """
     # FIXME: 앞 뒤로 공평하게 선택되도록 초반과 후반의 item들에게 중복 window 적용 필요
-    WINDOW_SIZE = 10
+    WINDOW_SIZE_CONSTANT = 10
 
     def get_lpm(start_time: int, end_time: int, letter_count: int):
         return letter_count / (end_time - start_time) * 1000 * 60
@@ -80,6 +80,9 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
             word_index += 1
 
     word_speed = [0] * len(words)
+
+    # Window Size 보다 word length가 짧으면 에러나서 수정
+    WINDOW_SIZE = min(WINDOW_SIZE_CONSTANT, len(words))
 
     # 앞에서 잘리는 부분 따로 window 선택해줌
     for idx in range(WINDOW_SIZE - 1):
@@ -120,7 +123,7 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
             word_speed[idx:] = [x + 1 for x in word_speed[idx:]]
         elif lpm < 300:
             word_speed[idx:] = [x - 1 for x in word_speed[idx:]]
-    
+
     result = {"WINDOW_SIZE": WINDOW_SIZE, "speed_list": word_speed}
     return result
 
@@ -186,10 +189,9 @@ def get_ptl_ratio(stt_json: dict):
 # TEST
 if __name__ == "__main__":
     with open(
-        "/Users/cyh/cyh/programming/wasak/research/samples/kss_concatenated_script_sample.json",
+        "/Users/cyh/cyh/programming/wasak/research/samples/지식브런치_stt.json",
         "r",
     ) as f:
         concatenated_script = json.loads(f.read())
         a = get_lpm_heatmap(concatenated_script)
-
         print(a)
