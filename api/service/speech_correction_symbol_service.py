@@ -56,14 +56,15 @@ def get_speech_correction(
         curr_line_end_word_idx = concatenated_script["segments"][idx]["words"][-1][3]
 
         # LPM 분석
-        if lpm >= SpeechCorrectionBreakpointValue.LPM_FAST:
-            speech_correction_list[SpeechCorrectionType.TOO_FAST.value].append(
-                [curr_line_start_word_idx, curr_line_end_word_idx]
-            )
-        elif lpm < SpeechCorrectionBreakpointValue.LPM_SLOW:
-            speech_correction_list[SpeechCorrectionType.TOO_SLOW.value].append(
-                [curr_line_start_word_idx, curr_line_end_word_idx]
-            )
+        # TODO: Window 방식으로 LPM 바꿨으므로 추후 어떻게 분석 결과 넘겨줘야할지 결정해야 함.
+        # if lpm >= SpeechCorrectionBreakpointValue.LPM_FAST:
+        #     speech_correction_list[SpeechCorrectionType.TOO_FAST.value].append(
+        #         [curr_line_start_word_idx, curr_line_end_word_idx]
+        #     )
+        # elif lpm < SpeechCorrectionBreakpointValue.LPM_SLOW:
+        #     speech_correction_list[SpeechCorrectionType.TOO_SLOW.value].append(
+        #         [curr_line_start_word_idx, curr_line_end_word_idx]
+        #     )
 
         # PTL 분석
         if ptl and ptl >= SpeechCorrectionBreakpointValue.PAUSE_LONG:
