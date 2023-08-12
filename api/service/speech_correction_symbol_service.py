@@ -40,6 +40,9 @@ def get_speech_correction(
         SpeechCorrectionType.PAUSE_TOO_SHORT.value: [],
     }
 
+    if not concatenated_script["segments"]:
+        return speech_correction_list
+
     # 원본 concatenated_script에 word index 추가
     word_index = 0
     for s_idx, segment in enumerate(concatenated_script["segments"]):
