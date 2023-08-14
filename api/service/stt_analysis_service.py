@@ -49,6 +49,51 @@ def get_lpm_by_sentence(stt_json: dict) -> List[Tuple[int, int, str]]:
     return lpm_by_sentence
 
 
+def get_lpm_by_sentence_v2(stt_json: dict) -> List[int]:
+    """
+    _summary_
+        모든 segments 들을 순회하며 words 별로 걸린 시간 및 글자 수를 합산, '.'를 만나면 문장의 끝으로 판단하여 lpm_by_sentence를 계산한다.
+        분석 후 sentence 내에서 lpm이 400이 넘는 것은 2, 넘지 않는 것은 1, 이외의 것들은 0으로 처리한다.
+
+    Args:
+        stt_json (dict): Clova에서 받은 STT 결과를 reconstruct한 json
+
+    Returns:
+        List[int]: 문장별 lpm 분석 결과를 기존 index에 맞춰 반환
+    """
+
+    lpm_by_sentence = [
+        len(s["text"].replace(" ", "").replace(".", ""))
+        / (s["end"] - s["start"])
+        * 1000
+        * 60
+        for s in stt_json["segments"]
+    ]
+
+    word_speed_list = []
+
+    for lpm, segment in zip(lpm_by_sentence, stt_json["segments"]):
+        print(lpm)
+        if lpm > 400:
+            for w in segment["words"]:
+                word_speed = len(w[2].replace(" ", "")) / (w[1] - w[0]) * 1000 * 60
+                if word_speed > 400:
+                    word_speed_list.append(2)
+                else:
+                    word_speed_list.append(1)
+        elif lpm < 300:
+            for w in segment["words"]:
+                word_speed = len(w[2].replace(" ", "")) / (w[1] - w[0]) * 1000 * 60
+                if word_speed < 300:
+                    word_speed_list.append(-2)
+                else:
+                    word_speed_list.append(-1)
+        else:
+            word_speed_list += [0] * len(segment["words"])
+
+    return word_speed_list
+
+
 def get_lpm_by_word(stt_json: dict) -> List[int]:
     """
     _summary_
@@ -64,11 +109,12 @@ def get_lpm_by_word(stt_json: dict) -> List[int]:
         return []
 
     lpm_by_word = [
-        round(len(w[2].replace(" ", "")) / (w[1] - w[0]) * 1000 * 60, 2)
+        (round(len(w[2].replace(" ", "")) / (w[1] - w[0]) * 1000 * 60, 2), w[2])
         for s in stt_json["segments"]
         for w in s["words"]
     ]
 
+    lpm_by_word.sort()
     return lpm_by_word
 
 
@@ -216,5 +262,5 @@ if __name__ == "__main__":
         "r",
     ) as f:
         concatenated_script = json.loads(f.read())
-        a = get_lpm_by_word(concatenated_script)
+        a = get_lpm_by_sentence_v2(concatenated_script)
         print(a)

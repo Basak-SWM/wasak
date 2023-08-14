@@ -30,6 +30,7 @@ from api.service.audio_analysis_service import (
 from api.service.speech_correction_symbol_service import get_speech_correction
 from api.service.stt_analysis_service import (
     get_average_lpm,
+    get_lpm_by_sentence_v2,
     get_lpm_heatmap,
     get_ptl_ratio,
     get_ptl_by_sentence,
@@ -199,7 +200,7 @@ def analysis2_async_wrapper(presentation_id: int, speech_id: int):
     print("[LOG] 3-1. 문장 간 휴지 분석 수행 완료")
 
     # 3-2. LPM 분석 수행
-    lpm_result = get_lpm_heatmap(concatenated_script)
+    lpm_result = get_lpm_by_sentence_v2(concatenated_script)
     analysis_record_service.save_analysis_result(
         presentation_id, speech_id, AnalysisRecordType.LPM, lpm_result
     )
