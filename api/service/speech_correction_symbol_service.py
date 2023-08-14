@@ -54,7 +54,7 @@ def get_speech_correction(
             word_index += 1
 
     # PTL 분석의 경우 마지막 문장 뒤에는 휴지가 없기 때문에 zip_longest를 사용한다.
-    for idx, (lpm, ptl) in enumerate(ptl_by_sentence):
+    for idx, ptl in enumerate(ptl_by_sentence):
         # for idx, (lpm, ptl) in enumerate(zip_longest(lpm_by_sentence, ptl_by_sentence)):
         curr_line_start_word_idx = concatenated_script["segments"][idx]["words"][0][3]
         curr_line_end_word_idx = concatenated_script["segments"][idx]["words"][-1][3]
