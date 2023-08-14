@@ -49,6 +49,29 @@ def get_lpm_by_sentence(stt_json: dict) -> List[Tuple[int, int, str]]:
     return lpm_by_sentence
 
 
+def get_lpm_by_word(stt_json: dict) -> List[int]:
+    """
+    _summary_
+        단어 별로 lpm 계산
+
+    Args:
+        stt_json (dict): Clova에서 받은 STT 결과를 reconstruct한 json
+
+    Returns:
+        List[int]: 단어별 속도를 lpm으로 넘겨줌
+    """
+    if not stt_json["segments"]:
+        return []
+
+    lpm_by_word = [
+        round(len(w[2].replace(" ", "")) / (w[1] - w[0]) * 1000 * 60, 2)
+        for s in stt_json["segments"]
+        for w in s["words"]
+    ]
+
+    return lpm_by_word
+
+
 def get_lpm_heatmap(stt_json: dict) -> List[int]:
     """
     _summary_
@@ -193,5 +216,5 @@ if __name__ == "__main__":
         "r",
     ) as f:
         concatenated_script = json.loads(f.read())
-        a = get_lpm_heatmap(concatenated_script)
+        a = get_lpm_by_word(concatenated_script)
         print(a)
