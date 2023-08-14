@@ -1,8 +1,8 @@
-name: Deploy to EC2 staging server
+name: Deploy to EC2 server
 
 on:
   push:
-    branches: [staging]
+    branches: [staging, production]
 
 jobs:
   deploy:
@@ -13,9 +13,9 @@ jobs:
         if: contains(github.ref, 'staging')
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets.AWS_HOST_DEPLOY }}
-          username: ${{ secrets.AWS_SSH_USERNAME }}
-          key: ${{ secrets.AWS_SSH_KEY }}
+          host: ${{ secrets.AWS_HOST_DEPLOY_STAGING }}
+          username: ${{ secrets.AWS_SSH_USERNAME_STAGING }}
+          key: ${{ secrets.AWS_SSH_KEY_STAGING }}
           script_stop: true
           script: |
             set +e
@@ -26,6 +26,30 @@ jobs:
             git branch staging || true
             git checkout staging
             git pull origin staging
+
+            source ~/app/venvs/wasak/bin/activate
+            cat ~/app/.secrets/wasak/.env > ./.env
+            pip3 install -r ./requirements.txt
+
+            nohup uvicorn main:app --port=8000 --host=0.0.0.0 > ../log/wasak.log 2>&1 &
+
+      - name: Deploy on production server
+        if: contains(github.ref, 'production')
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.AWS_HOST_DEPLOY_PRODUCTION }}
+          username: ${{ secrets.AWS_SSH_USERNAME_PRODUCTION }}
+          key: ${{ secrets.AWS_SSH_KEY_PRODUCTION }}
+          script_stop: true
+          script: |
+            set +e
+            sudo kill -9 $(sudo lsof -t -i:8000) || true
+            git clone git@github.com:Basak-SWM/wasak.git ~/app/wasak || true
+            cd ~/app/wasak
+
+            git branch production || true
+            git checkout production
+            git pull origin production
 
             source ~/app/venvs/wasak/bin/activate
             cat ~/app/.secrets/wasak/.env > ./.env
