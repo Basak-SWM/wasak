@@ -1,3 +1,4 @@
+from collections import Counter
 import json
 from typing import Tuple, List
 
@@ -35,7 +36,6 @@ def get_lpm_by_sentence(stt_json: dict) -> List[Tuple[int, int, str]]:
 
     Returns:
         List[int]: 문장별 lpm 분석 결과를 기존 index에 맞춰 반환
-
     """
 
     lpm_by_sentence = [
@@ -47,6 +47,85 @@ def get_lpm_by_sentence(stt_json: dict) -> List[Tuple[int, int, str]]:
     ]
 
     return lpm_by_sentence
+
+
+def get_lpm_heatmap(stt_json: dict) -> List[int]:
+    """
+    _summary_
+
+    Args:
+        stt_json (dict): Clova에서 받은 STT 결과를 reconstruct한 json
+
+    Returns:
+        List[int]: 단어별 속도를 -10 ~ +10으로 분석
+    """
+    # FIXME: 앞 뒤로 공평하게 선택되도록 초반과 후반의 item들에게 중복 window 적용 필요
+    WINDOW_SIZE_CONSTANT = 5
+
+    def get_lpm(start_time: int, end_time: int, letter_count: int):
+        return letter_count / (end_time - start_time) * 1000 * 60
+
+    words = []
+
+    # 모든 단어에 word_index를 붙여서 unpack
+    word_index = 0
+    for s_idx, segment in enumerate(stt_json["segments"]):
+        for w_idx in range(len(segment["words"])):
+            words.append(
+                (
+                    *stt_json["segments"][s_idx]["words"][w_idx],
+                    word_index,
+                )
+            )
+            word_index += 1
+
+    word_speed = [0] * len(words)
+
+    # Window Size 보다 word length가 짧으면 에러나서 수정
+    WINDOW_SIZE = min(WINDOW_SIZE_CONSTANT, len(words))
+
+    # 앞에서 잘리는 부분 따로 window 선택해줌
+    for idx in range(WINDOW_SIZE - 1):
+        start_time = words[0][0]
+        end_time = words[idx + 1][1]
+        letter_count = sum([len(w[2]) for w in words[: idx + 1]])
+
+        lpm = get_lpm(start_time, end_time, letter_count)
+        if lpm > 450:
+            word_speed[: idx + 1] = [x + 1 for x in word_speed[: idx + 1]]
+        elif lpm < 300:
+            word_speed[: idx + 1] = [x - 1 for x in word_speed[: idx + 1]]
+
+    # 앞 뒤 제외 동일한 비중으로 선택되는 window 선택지
+    for idx in range(len(words) - WINDOW_SIZE):
+        start_time = words[idx][0]
+        end_time = words[idx + WINDOW_SIZE - 1][1]
+        letter_count = sum([len(w[2]) for w in words[idx : idx + WINDOW_SIZE]])
+
+        lpm = get_lpm(start_time, end_time, letter_count)
+        if lpm > 400:
+            word_speed[idx : idx + WINDOW_SIZE] = [
+                x + 1 for x in word_speed[idx : idx + WINDOW_SIZE]
+            ]
+        elif lpm < 300:
+            word_speed[idx : idx + WINDOW_SIZE] = [
+                x - 1 for x in word_speed[idx : idx + WINDOW_SIZE]
+            ]
+
+    # 뒤에서 잘리는 부분 따로 window 선택해줌
+    for idx in range(len(words) - WINDOW_SIZE, len(words)):
+        start_time = words[idx][0]
+        end_time = words[-1][1]
+        letter_count = sum([len(w[2]) for w in words[idx:]])
+
+        lpm = get_lpm(start_time, end_time, letter_count)
+        if lpm > 400:
+            word_speed[idx:] = [x + 1 for x in word_speed[idx:]]
+        elif lpm < 300:
+            word_speed[idx:] = [x - 1 for x in word_speed[idx:]]
+
+    result = {"WINDOW_SIZE": WINDOW_SIZE, "speed_list": word_speed}
+    return result
 
 
 def get_ptl_by_sentence(stt_json: dict):
@@ -110,21 +189,9 @@ def get_ptl_ratio(stt_json: dict):
 # TEST
 if __name__ == "__main__":
     with open(
-        "/Users/cyh/cyh/programming/wasak/research/samples/kss_concatenated_script_sample.json",
+        "/Users/cyh/cyh/programming/wasak/research/samples/지식브런치_stt.json",
         "r",
     ) as f:
         concatenated_script = json.loads(f.read())
-
-    ptl_by_sentence = get_ptl_by_sentence(concatenated_script)
-    ptl_avg = get_ptl_ratio(concatenated_script)
-
-    lpm_by_sentence = get_lpm_by_sentence(concatenated_script)
-    lpm_avg = get_average_lpm(concatenated_script)
-
-    temp = [ptl_by_sentence, ptl_avg, lpm_by_sentence, lpm_avg]
-
-    with open(
-        "test_result.json",
-        "w",
-    ) as f:
-        f.write(json.dumps(temp))
+        a = get_lpm_heatmap(concatenated_script)
+        print(a)

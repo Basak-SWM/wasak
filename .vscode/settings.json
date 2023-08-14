@@ -2,13 +2,20 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
-  "python.formatting.provider": "none",
+  "python.formatting.provider": "black",
   "conventionalCommits.scopes": ["s3", "stt", "audio", "api-info"],
   "python.testing.unittestArgs": ["-v", "-s", "./test", "-p", "test_*.py"],
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true,
   "cSpell.words": ["clova", "dalcom", "sessionmaker", "sqlalchemy"],
   "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#d6ac53",
+    "titleBar.activeForeground": "#000000",
+    "titleBar.inactiveBackground": "#d6ac53",
+    "titleBar.inactiveForeground": "#000000",
+    "titleBar.border": "#d6ac53",
+    "activityBar.foreground": "#d6ac53",
+    "tab.activeBorder": "#d6ac53",
     "iLoveWorkSpaceColors": true,
     "iLoveWorkSpaceRandom": false,
     "useWorkspaceLite": true

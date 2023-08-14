@@ -40,6 +40,9 @@ def get_speech_correction(
         SpeechCorrectionType.PAUSE_TOO_SHORT.value: [],
     }
 
+    if not concatenated_script["segments"]:
+        return speech_correction_list
+
     # 원본 concatenated_script에 word index 추가
     word_index = 0
     for s_idx, segment in enumerate(concatenated_script["segments"]):
@@ -51,19 +54,21 @@ def get_speech_correction(
             word_index += 1
 
     # PTL 분석의 경우 마지막 문장 뒤에는 휴지가 없기 때문에 zip_longest를 사용한다.
-    for idx, (lpm, ptl) in enumerate(zip_longest(lpm_by_sentence, ptl_by_sentence)):
+    for idx, ptl in enumerate(ptl_by_sentence):
+        # for idx, (lpm, ptl) in enumerate(zip_longest(lpm_by_sentence, ptl_by_sentence)):
         curr_line_start_word_idx = concatenated_script["segments"][idx]["words"][0][3]
         curr_line_end_word_idx = concatenated_script["segments"][idx]["words"][-1][3]
 
         # LPM 분석
-        if lpm >= SpeechCorrectionBreakpointValue.LPM_FAST:
-            speech_correction_list[SpeechCorrectionType.TOO_FAST.value].append(
-                [curr_line_start_word_idx, curr_line_end_word_idx]
-            )
-        elif lpm < SpeechCorrectionBreakpointValue.LPM_SLOW:
-            speech_correction_list[SpeechCorrectionType.TOO_SLOW.value].append(
-                [curr_line_start_word_idx, curr_line_end_word_idx]
-            )
+        # TODO: Window 방식으로 LPM 바꿨으므로 추후 어떻게 분석 결과 넘겨줘야할지 결정해야 함.
+        # if lpm >= SpeechCorrectionBreakpointValue.LPM_FAST:
+        #     speech_correction_list[SpeechCorrectionType.TOO_FAST.value].append(
+        #         [curr_line_start_word_idx, curr_line_end_word_idx]
+        #     )
+        # elif lpm < SpeechCorrectionBreakpointValue.LPM_SLOW:
+        #     speech_correction_list[SpeechCorrectionType.TOO_SLOW.value].append(
+        #         [curr_line_start_word_idx, curr_line_end_word_idx]
+        #     )
 
         # PTL 분석
         if ptl and ptl >= SpeechCorrectionBreakpointValue.PAUSE_LONG:
