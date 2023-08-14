@@ -60,7 +60,7 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
         List[int]: 단어별 속도를 -10 ~ +10으로 분석
     """
     # FIXME: 앞 뒤로 공평하게 선택되도록 초반과 후반의 item들에게 중복 window 적용 필요
-    WINDOW_SIZE_CONSTANT = 10
+    WINDOW_SIZE_CONSTANT = 5
 
     def get_lpm(start_time: int, end_time: int, letter_count: int):
         return letter_count / (end_time - start_time) * 1000 * 60
@@ -91,7 +91,7 @@ def get_lpm_heatmap(stt_json: dict) -> List[int]:
         letter_count = sum([len(w[2]) for w in words[: idx + 1]])
 
         lpm = get_lpm(start_time, end_time, letter_count)
-        if lpm > 400:
+        if lpm > 450:
             word_speed[: idx + 1] = [x + 1 for x in word_speed[: idx + 1]]
         elif lpm < 300:
             word_speed[: idx + 1] = [x - 1 for x in word_speed[: idx + 1]]
