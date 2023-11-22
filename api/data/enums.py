@@ -18,3 +18,15 @@ class SpeechCorrectionType(enum.Enum):
     TOO_SLOW = "TOO_SLOW"
     PAUSE_TOO_LONG = "PAUSE_TOO_LONG"
     PAUSE_TOO_SHORT = "PAUSE_TOO_SHORT"
+
+
+class AIChatLogRole(enum.Enum):
+    SYSTEM = "system"
+    AI = "ai"
+    HUMAN = "human"
+
+
+class AIChatLogStatus(enum.Enum):
+    WAIT = "WAIT"
+    DONE = "DONE"
+    ERROR = "ERROR"

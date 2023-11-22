@@ -9,9 +9,10 @@ from sqlalchemy import (
     ForeignKey,
     BigInteger,
     func,
+    Text,
 )
 
-from api.data.enums import AnalysisRecordType
+from api.data.enums import AnalysisRecordType, AIChatLogRole, AIChatLogStatus
 
 Base = declarative_base()
 
@@ -27,6 +28,8 @@ class FullDateMixin(CreatedDateMixin):
 class Presentation(FullDateMixin, Base):
     __tablename__ = "presentation"
     id = Column(Integer, primary_key=True)
+    outline = Column(Text, nullable=True)
+    checkpoint = Column(Text, nullable=True)
 
 
 class Speech(FullDateMixin, Base):
@@ -65,3 +68,12 @@ class AnalysisRecord(CreatedDateMixin, Base):
     record_type = Column(Enum(AnalysisRecordType), name="type", nullable=False)
     speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
     url = Column(String, name="url", nullable=False)
+
+
+class AIChatLog(CreatedDateMixin, Base):
+    __tablename__ = "ai_chat_log_v2"
+    id = Column(Integer, primary_key=True)
+    speech_id = Column(Integer, ForeignKey("speech.id"), nullable=False)
+    role = Column(Enum(AIChatLogRole), name="role", nullable=False)
+    status = Column(Enum(AIChatLogStatus), name="status", nullable=False)
+    content = Column(Text, name="content", nullable=True)

@@ -5,7 +5,13 @@ from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 
 from api.configs import db
-from api.data.tables import AnalysisRecord, AudioSegment, Speech
+from api.data.tables import (
+    AnalysisRecord,
+    AudioSegment,
+    Speech,
+    AIChatLog,
+    Presentation,
+)
 
 
 T = TypeVar("T")
@@ -97,3 +103,13 @@ class AudioSegmentDatabaseClient(DatabaseClient):
 class AnalysisRecordDatabaseClient(DatabaseClient):
     def __init__(self) -> None:
         super().__init__(AnalysisRecord)
+
+
+class AIChatLogDatabaseClient(DatabaseClient):
+    def __init__(self) -> None:
+        super().__init__(AIChatLog)
+
+
+class PresentationDatabaseClient(DatabaseClient):
+    def __init__(self) -> None:
+        super().__init__(Presentation)
