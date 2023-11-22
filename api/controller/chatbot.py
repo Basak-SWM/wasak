@@ -74,7 +74,7 @@ def init_ai_chat_logs(speech_id: int):
         raise HTTPException(status_code=404)
 
     if is_initialized(speech_id):
-        raise HTTPException(status_code=409, detail="Already initialized")
+        return {"message": "already initialized"}
     else:
         presentation = presentation_db_client.get_single(
             [Presentation.id.bool_op("=")(speech.presentation_id)]
